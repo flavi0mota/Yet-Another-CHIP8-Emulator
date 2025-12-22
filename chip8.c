@@ -128,6 +128,27 @@ bool init_sdl(sdl_t *sdl, config_t *config) {
     return false;
   }
 
+  sdl->want = (SDL_AudioSpec){
+    .freq = 44100,
+    .format = AUDIO_S16LSB,
+    .channels = 1,
+    .samples = 512,
+    .callback = audio_callback,
+    .userdata = config,
+  };
+
+  sdl->dev = SDL_OpenAudioDevice(NULL, 0, &sdl->want, &sdl->have, 0);
+
+  if (sdl->dev == 0) {
+    SDL_Log("Could not initiate audio device: %s\n", SDL_GetError());
+    return false;
+  }
+
+  if ((sdl->want.format != sdl->have.format) || (sdl->want.channels != sdl->have.channels)) {
+    SDL_Log("Could not get audio spec: %s\n", SDL_GetError());
+    return false;
+  }
+
   return true;
 }
 
@@ -160,65 +181,67 @@ bool set_config_from_args(config_t* config, const int argc, char** argv) {
 }
 
 bool init_chip8(chip8_t *chip8, const config_t config, const char rom_name[]) {
-  const uint32_t entry_point = 0x200;
-  const uint8_t font[] = {
-      0xF0, 0x90, 0x90, 0x90, 0xF0,   // 0   
-      0x20, 0x60, 0x20, 0x20, 0x70,   // 1  
-      0xF0, 0x10, 0xF0, 0x80, 0xF0,   // 2 
-      0xF0, 0x10, 0xF0, 0x10, 0xF0,   // 3
-      0x90, 0x90, 0xF0, 0x10, 0x10,   // 4    
-      0xF0, 0x80, 0xF0, 0x10, 0xF0,   // 5
-      0xF0, 0x80, 0xF0, 0x90, 0xF0,   // 6
-      0xF0, 0x10, 0x20, 0x40, 0x40,   // 7
-      0xF0, 0x90, 0xF0, 0x90, 0xF0,   // 8
-      0xF0, 0x90, 0xF0, 0x10, 0xF0,   // 9
-      0xF0, 0x90, 0xF0, 0x90, 0x90,   // A
-      0xE0, 0x90, 0xE0, 0x90, 0xE0,   // B
-      0xF0, 0x80, 0x80, 0x80, 0xF0,   // C
-      0xE0, 0x90, 0x90, 0x90, 0xE0,   // D
-      0xF0, 0x80, 0xF0, 0x80, 0xF0,   // E
-      0xF0, 0x80, 0xF0, 0x80, 0x80,   // F
-  };
+    const uint32_t entry_point = 0x200; // CHIP8 Roms will be loaded to 0x200
+    const uint8_t font[] = {
+        0xF0, 0x90, 0x90, 0x90, 0xF0,   // 0   
+        0x20, 0x60, 0x20, 0x20, 0x70,   // 1  
+        0xF0, 0x10, 0xF0, 0x80, 0xF0,   // 2 
+        0xF0, 0x10, 0xF0, 0x10, 0xF0,   // 3
+        0x90, 0x90, 0xF0, 0x10, 0x10,   // 4    
+        0xF0, 0x80, 0xF0, 0x10, 0xF0,   // 5
+        0xF0, 0x80, 0xF0, 0x90, 0xF0,   // 6
+        0xF0, 0x10, 0x20, 0x40, 0x40,   // 7
+        0xF0, 0x90, 0xF0, 0x90, 0xF0,   // 8
+        0xF0, 0x90, 0xF0, 0x10, 0xF0,   // 9
+        0xF0, 0x90, 0xF0, 0x90, 0x90,   // A
+        0xE0, 0x90, 0xE0, 0x90, 0xE0,   // B
+        0xF0, 0x80, 0x80, 0x80, 0xF0,   // C
+        0xE0, 0x90, 0x90, 0x90, 0xE0,   // D
+        0xF0, 0x80, 0xF0, 0x80, 0xF0,   // E
+        0xF0, 0x80, 0xF0, 0x80, 0x80,   // F
+    };
 
-  memset(chip8, 0, sizeof(chip8_t));
+    // Initialize entire CHIP8 machine
+    memset(chip8, 0, sizeof(chip8_t));
 
-  memcpy(&chip8->ram[0], font, sizeof(font));
+    // Load font 
+    memcpy(&chip8->ram[0], font, sizeof(font));
+   
+    // Open ROM file
+    FILE *rom = fopen(rom_name, "rb");
+    if (!rom) {
+        SDL_Log("Rom file %s is invalid or does not exist\n", rom_name);
+        return false;
+    }
 
-  FILE *rom = fopen(rom_name, "rb");
+    // Get/check rom size
+    fseek(rom, 0, SEEK_END);
+    const size_t rom_size = ftell(rom);
+    const size_t max_size = sizeof chip8->ram - entry_point;
+    rewind(rom);
 
-  if (!rom) {
-    SDL_Log("Rom file %s is invalid or does not exist\n", rom_name);
-    return false;
-  }
+    if (rom_size > max_size) {
+        SDL_Log("Rom file %s is too big! Rom size: %llu, Max size allowed: %llu\n", 
+                rom_name, (long long unsigned)rom_size, (long long unsigned)max_size);
+        return false;
+    }
 
-  fseek(rom, 0, SEEK_END);
-  const size_t rom_size = ftell(rom);
-  const size_t max_size = sizeof chip8->ram - entry_point;
-  rewind(rom);
+    // Load ROM
+    if (fread(&chip8->ram[entry_point], rom_size, 1, rom) != 1) {
+        SDL_Log("Could not read Rom file %s into CHIP8 memory\n", 
+                rom_name);
+        return false;
+    }
+    fclose(rom);
 
-  if (rom_size > max_size) {
-    SDL_Log("Rom file %s is too big! Rom size: %llu, Max size allowed, %llu\n",
-      rom_name, (long long unsigned)rom_size, (long long unsigned)max_size);
+    // Set chip8 machine defaults
+    chip8->state = RUNNING;     // Default machine state to on/running
+    chip8->PC = entry_point;    // Start program counter at ROM entry point
+    chip8->rom_name = rom_name;
+    chip8->stack_ptr = &chip8->stack[0];
+    memset(&chip8->pixel_color[0], config.bg_color, sizeof chip8->pixel_color); // Init pixels to bg color
 
-    return false;
-  }
-
-  if (fread(&chip8->ram[entry_point], rom_size, 1, rom) != 1) {
-    SDL_Log("Could not read rom file %s into CHIP8 memory\n, sorry ma'am\n",
-      rom_name);
-
-    return false;
-  }
-
-  fclose(rom);
-
-  chip8->state = RUNNING;
-  chip8->PC = entry_point;
-  chip8->rom_name = rom_name;
-  chip8->stack_ptr = &chip8->stack[0];
-  memset(&chip8->pixel_color[0], config.bg_color, sizeof chip8->pixel_color);
-
-  return true;
+    return true;    // Success
 }
 
 void final_cleanup(const sdl_t sdl) {
@@ -230,74 +253,67 @@ void final_cleanup(const sdl_t sdl) {
 }
 
 void clear_screen(const sdl_t sdl, const config_t config) {
-  const uint8_t r = (config.bg_color >> 24) & 0xFF;
-  const uint8_t g = (config.bg_color >> 16) & 0xFF;
-  const uint8_t b = (config.bg_color >>  8) & 0xFF;
-  const uint8_t a = (config.bg_color >>  0) & 0xFF;
+    const uint8_t r = (config.bg_color >> 24) & 0xFF;
+    const uint8_t g = (config.bg_color >> 16) & 0xFF;
+    const uint8_t b = (config.bg_color >>  8) & 0xFF;
+    const uint8_t a = (config.bg_color >>  0) & 0xFF;
 
-  SDL_SetRenderDrawColor(sdl.renderer, r, g, b, a);
-  SDL_RenderClear(sdl.renderer);
+    SDL_SetRenderDrawColor(sdl.renderer, r, g, b, a);
+    SDL_RenderClear(sdl.renderer);
 }
 
 void update_screen(const sdl_t sdl, const config_t config, chip8_t *chip8) {
-  SDL_Rect rect = {
-    .x = 0,
-    .y = 0,
-    .w = config.scale_factor,
-    .h = config.scale_factor
-  };
+    SDL_Rect rect = {.x = 0, .y = 0, .w = config.scale_factor, .h = config.scale_factor};
 
+    const uint8_t bg_r = (config.bg_color >> 24) & 0xFF;
+    const uint8_t bg_g = (config.bg_color >> 16) & 0xFF;
+    const uint8_t bg_b = (config.bg_color >>  8) & 0xFF;
+    const uint8_t bg_a = (config.bg_color >>  0) & 0xFF;
 
-  //mascara do and para o efeito do background
-  const uint8_t bg_r = (config.bg_color >> 24) & 0xFF;
-  const uint8_t bg_g = (config.bg_color >> 16) & 0xFF;
-  const uint8_t bg_b = (config.bg_color >>  8) & 0xFF;
-  const uint8_t bg_a = (config.bg_color >>  0) & 0xFF;
+    for (uint32_t i = 0; i < sizeof chip8->display; i++) {
+        rect.x = (i % config.window_width) * config.scale_factor;
+        rect.y = (i / config.window_width) * config.scale_factor;
 
-  for(uint32_t i = 0; i < sizeof chip8->display; i++) {
-    //para ficar bonitinho no emulador
-    rect.x = (i % config.window_width) * config.scale_factor;
-    rect.y = (i / config.window_width) * config.scale_factor;
+        if (chip8->display[i]) {
+            if (chip8->pixel_color[i] != config.fg_color) {
+                chip8->pixel_color[i] = color_lerp(chip8->pixel_color[i], 
+                                                   config.fg_color, 
+                                                   config.color_lerp_rate);
+            }
 
-    if (chip8->display[i]) {
-      if (chip8->pixel_color[i] != config.fg_color) {
-        chip8->pixel_color[i] = color_lerp(chip8->pixel_color[i],
-                                          config.fg_color,
-                                          config.color_lerp_rate);
-      }
+            const uint8_t r = (chip8->pixel_color[i] >> 24) & 0xFF;
+            const uint8_t g = (chip8->pixel_color[i] >> 16) & 0xFF;
+            const uint8_t b = (chip8->pixel_color[i] >>  8) & 0xFF;
+            const uint8_t a = (chip8->pixel_color[i] >>  0) & 0xFF;
 
-      const uint8_t r = (chip8->pixel_color[i] >> 24) & 0xFF;
-      const uint8_t g = (chip8->pixel_color[i] >> 16) & 0xFF;
-      const uint8_t b = (chip8->pixel_color[i] >>  8) & 0xFF;
-      const uint8_t a = (chip8->pixel_color[i] >>  0) & 0xFF;
+            SDL_SetRenderDrawColor(sdl.renderer, r, g, b, a);
+            SDL_RenderFillRect(sdl.renderer, &rect);
+        
+            if (config.pixel_outlines) {
+                SDL_SetRenderDrawColor(sdl.renderer, bg_r, bg_g, bg_b, bg_a);
+                SDL_RenderDrawRect(sdl.renderer, &rect);
+            }
 
-      SDL_SetRenderDrawColor(sdl.renderer, r, g, b, a);
-      SDL_RenderFillRect(sdl.renderer, &rect);
+        } else {
+            if (chip8->pixel_color[i] != config.bg_color) {
+                // Lerp
+                chip8->pixel_color[i] = color_lerp(chip8->pixel_color[i], 
+                                                   config.bg_color, 
+                                                   config.color_lerp_rate);
+            }
 
-      if (config.pixel_outlines) {
-        SDL_SetRenderDrawColor(sdl.renderer, bg_r, bg_g, bg_b, bg_a);
-        SDL_RenderDrawRect(sdl.renderer, &rect);
-      }
+            const uint8_t r = (chip8->pixel_color[i] >> 24) & 0xFF;
+            const uint8_t g = (chip8->pixel_color[i] >> 16) & 0xFF;
+            const uint8_t b = (chip8->pixel_color[i] >>  8) & 0xFF;
+            const uint8_t a = (chip8->pixel_color[i] >>  0) & 0xFF;
 
-    } else {
-      if (chip8->pixel_color[i] != config.bg_color) {
-        chip8->pixel_color[i] = color_lerp(chip8->pixel_color[i],
-                                          config.bg_color,
-                                          config.color_lerp_rate);
-      }
+            SDL_SetRenderDrawColor(sdl.renderer, r, g, b, a);
+            SDL_RenderFillRect(sdl.renderer, &rect);
+        }
+    }
 
-      //bit masking é coisa do capeta pqp
-      const uint8_t r = (chip8->pixel_color[i] >> 24) & 0xFF;
-      const uint8_t g = (chip8->pixel_color[i] >> 16) & 0xFF;
-      const uint8_t b = (chip8->pixel_color[i] >>  8) & 0xFF;
-      const uint8_t a = (chip8->pixel_color[i] >>  0) & 0xFF;
-
-      SDL_SetRenderDrawColor(sdl.renderer, r, g, b, a);
-      SDL_RenderFillRect(sdl.renderer, &rect);
-  }
-
-  SDL_RenderPresent(sdl.renderer);
-}}
+    SDL_RenderPresent(sdl.renderer);
+}
 
 // semelhante ao congelar da vm
 bool save_estado_chip(const chip8_t *chip8, const char *filename) {
