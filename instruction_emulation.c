@@ -15,6 +15,12 @@ void emulate_instruction(chip8_t *chip8, const config_t config) {
     chip8->inst.X = (chip8->inst.opcode >> 8) & 0x0F;
     chip8->inst.Y = (chip8->inst.opcode >> 4) & 0x0F;
 
+    if (chip8->PC >= 4095) {
+        SDL_Log("PC fora do limite: %04X\n", chip8->PC);
+        chip8->state = QUIT;
+        return;
+    }
+
     // Emulate opcode
     switch ((chip8->inst.opcode >> 12) & 0x0F) {
         case 0x00:

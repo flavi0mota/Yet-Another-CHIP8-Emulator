@@ -60,7 +60,6 @@ int main(int argc, char **argv) {
           update_screen(sdl, config, &chip8);
           chip8.draw = false;
         }
-        SDL_RenderPresent(sdl.renderer);
         update_timers(sdl, &chip8);
     }
     final_cleanup(sdl); 

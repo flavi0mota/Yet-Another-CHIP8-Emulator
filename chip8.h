@@ -4,6 +4,8 @@
 
 #include <SDL2/SDL.h>
 
+#define STACK_SIZE 12
+
 typedef struct {
   SDL_Window *window;
   SDL_Renderer *renderer;
@@ -31,7 +33,7 @@ typedef struct {
   uint8_t ram[4096];
   bool display[64*32];
   uint32_t pixel_color[64*32];
-  uint16_t stack[12];
+  uint16_t stack[STACK_SIZE];
   uint16_t *stack_ptr;
   uint8_t V[16]; //reg de dados
   uint16_t I;
