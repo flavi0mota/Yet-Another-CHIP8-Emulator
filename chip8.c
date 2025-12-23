@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include <SDL2/SDL.h>
+#define STACK_SIZE 12
 
 typedef struct {
   SDL_Window *window;
@@ -54,7 +55,7 @@ typedef struct {
   uint8_t ram[4096];
   bool display[64*32];
   uint32_t pixel_color[64*32];
-  uint16_t stack[12];
+  uint16_t stack[STACK_SIZE];
   uint16_t *stack_ptr;
   uint8_t V[16]; //reg de dados
   uint16_t I;
@@ -70,37 +71,39 @@ typedef struct {
 
 //efeito de "flick" de monitores antigos
 uint32_t color_lerp(const uint32_t start_color, const uint32_t end_color, const float t) {
-  const uint8_t s_r = (start_color >> 24) & 0xFF;
-  const uint8_t s_g = (start_color >> 16) & 0xFF;
-  const uint8_t s_b = (start_color >> 8)  & 0xFF;
-  const uint8_t s_a = (start_color >> 0)  & 0xFF;
+    const uint8_t s_r = (start_color >> 24) & 0xFF;
+    const uint8_t s_g = (start_color >> 16) & 0xFF;
+    const uint8_t s_b = (start_color >> 8)  & 0xFF;
+    const uint8_t s_a = (start_color >> 0)  & 0xFF;
 
-  const uint8_t e_r = (end_color >> 24)   & 0xFF;
-  const uint8_t e_g = (end_color >> 16)   & 0xFF;
-  const uint8_t e_b = (end_color >> 8)    & 0xFF;
-  const uint8_t e_a = (end_color >> 0)    & 0xFF;
+    const uint8_t e_r = (end_color >> 24)   & 0xFF;
+    const uint8_t e_g = (end_color >> 16)   & 0xFF;
+    const uint8_t e_b = (end_color >> 8)    & 0xFF;
+    const uint8_t e_a = (end_color >> 0)    & 0xFF;
 
-  const uint8_t ret_r = ((1-t)*(s_r)) + (t*e_r);
-  const uint8_t ret_b = ((1-t)*(s_b)) + (t*e_b);
-  const uint8_t ret_g = ((1-t)*(s_g)) + (t*e_g);
-  const uint8_t ret_a = ((1-t)*(s_a)) + (t*e_a);
+    const uint8_t ret_r = ((1-t)*(s_r)) + (t*e_r);
+    const uint8_t ret_g = ((1-t)*(s_g)) + (t*e_g);
+    const uint8_t ret_b = ((1-t)*(s_b)) + (t*e_b);
+    const uint8_t ret_a = ((1-t)*(s_a)) + (t*e_a);
 
-  return (ret_r << 24) | (ret_b << 16) | (ret_g << 8) | (ret_a);
+    return (ret_r << 24) | (ret_g << 16) | (ret_b << 8) | (ret_a);
 }
 
 void audio_callback(void *userdata, uint8_t *stream, int len) {
-  config_t *config = (config_t *)userdata;
-  
-  int16_t *audio_data = (int16_t *)stream;
-  static uint32_t running_sample_index = 0;
-  const int32_t square_wave_period = config->audio_sample_rate / config->square_wave_freq;
-  const int32_t half_square_wave_period = square_wave_period / 2;
-
-  for (int i = 0; i < len/2; i++) {
-    audio_data[i] = ((running_sample_index++ / half_square_wave_period) % 2) ?
-                    config->volume :
-                    -config->volume;
-}
+    config_t *config = (config_t *)userdata;
+    
+    int16_t *audio_data = (int16_t *)stream;
+    static uint32_t running_sample_index = 0;
+    const int32_t square_wave_period = config->audio_sample_rate / config->square_wave_freq;
+    const int32_t half_square_wave_period = square_wave_period / 2;
+    
+    for (int i = 0; i < len/2; i++) {
+        audio_data[i] = ((running_sample_index / half_square_wave_period) % 2) ?
+                        config->volume : -config->volume;
+        
+        
+        running_sample_index = (running_sample_index + 1) % square_wave_period;
+    }
 }
 
 bool init_sdl(sdl_t *sdl, config_t *config) {
@@ -317,22 +320,18 @@ void update_screen(const sdl_t sdl, const config_t config, chip8_t *chip8) {
 
 // semelhante ao congelar da vm
 bool save_estado_chip(const chip8_t *chip8, const char *filename) {
-  FILE *file = fopen(filename, "wb"); // provavelmente vou settar isso no argumento
+    FILE *file = fopen(filename, "wb");
+    if (!file) return false;
 
-  if (!file) {
-    SDL_Log("Falha em abrir o abrir o arquivo %s\n", filename);
-    return false;
-  }
+    if (fwrite(chip8, sizeof(chip8_t), 1, file) != 1) {
+        fclose(file);
+        return false;
+    }
 
-  if (fwrite(chip8, sizeof(file), 1, file) != 1) {
-    SDL_Log("Falha em escrever estado para %s", filename);
-    return false;
-  }
-
-  fclose(file);
-
-  return true;
+    fclose(file);
+    return true;
 }
+
 
 bool carregar_estado_chip(chip8_t *chip8, const char *filename) {
   FILE *file = fopen(filename, "rb");
@@ -511,6 +510,12 @@ void emulate_instruction(chip8_t *chip8, const config_t config) {
     chip8->inst.N = chip8->inst.opcode & 0x0F;
     chip8->inst.X = (chip8->inst.opcode >> 8) & 0x0F;
     chip8->inst.Y = (chip8->inst.opcode >> 4) & 0x0F;
+
+    if (chip8->PC >= 4095) {
+        SDL_Log("PC fora do limite: %04X\n", chip8->PC);
+        chip8->state = QUIT;
+        return;
+    }
 
     // Emulate opcode
     switch ((chip8->inst.opcode >> 12) & 0x0F) {
@@ -886,7 +891,6 @@ int main(int argc, char **argv) {
           update_screen(sdl, config, &chip8);
           chip8.draw = false;
         }
-        SDL_RenderPresent(sdl.renderer);
         update_timers(sdl, &chip8);
     }
     final_cleanup(sdl); 
