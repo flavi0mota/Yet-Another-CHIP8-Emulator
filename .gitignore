@@ -1,3 +1,4 @@
 *.bin
 chip8
 *.ch8
+*.o
