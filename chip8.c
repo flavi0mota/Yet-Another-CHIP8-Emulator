@@ -7,6 +7,7 @@
 #include <SDL2/SDL.h>
 
 #include "chip8.h"
+#include "instruction_emulation.h"
 
 //efeito de "flick" de monitores antigos
 uint32_t color_lerp(const uint32_t start_color, const uint32_t end_color, const float t) {
@@ -204,23 +205,23 @@ void clear_screen(const sdl_t sdl, const config_t config) {
     SDL_RenderClear(sdl.renderer);
 }
 
-void update_screen(const sdl_t sdl, const config_t config, chip8_t *chip8) {
-    SDL_Rect rect = {.x = 0, .y = 0, .w = config.scale_factor, .h = config.scale_factor};
+void update_screen(const sdl_t *sdl, const config_t *config, chip8_t *chip8) {
+    SDL_Rect rect = {.x = 0, .y = 0, .w = config->scale_factor, .h = config->scale_factor};
 
-    const uint8_t bg_r = (config.bg_color >> 24) & 0xFF;
-    const uint8_t bg_g = (config.bg_color >> 16) & 0xFF;
-    const uint8_t bg_b = (config.bg_color >>  8) & 0xFF;
-    const uint8_t bg_a = (config.bg_color >>  0) & 0xFF;
+    const uint8_t bg_r = (config->bg_color >> 24) & 0xFF;
+    const uint8_t bg_g = (config->bg_color >> 16) & 0xFF;
+    const uint8_t bg_b = (config->bg_color >>  8) & 0xFF;
+    const uint8_t bg_a = (config->bg_color >>  0) & 0xFF;
 
     for (uint32_t i = 0; i < sizeof chip8->display; i++) {
-        rect.x = (i % config.window_width) * config.scale_factor;
-        rect.y = (i / config.window_width) * config.scale_factor;
+        rect.x = (i % config->window_width) * config->scale_factor;
+        rect.y = (i / config->window_width) * config->scale_factor;
 
         if (chip8->display[i]) {
-            if (chip8->pixel_color[i] != config.fg_color) {
+            if (chip8->pixel_color[i] != config->fg_color) {
                 chip8->pixel_color[i] = color_lerp(chip8->pixel_color[i], 
-                                                   config.fg_color, 
-                                                   config.color_lerp_rate);
+                                                   config->fg_color, 
+                                                   config->color_lerp_rate);
             }
 
             const uint8_t r = (chip8->pixel_color[i] >> 24) & 0xFF;
@@ -228,20 +229,20 @@ void update_screen(const sdl_t sdl, const config_t config, chip8_t *chip8) {
             const uint8_t b = (chip8->pixel_color[i] >>  8) & 0xFF;
             const uint8_t a = (chip8->pixel_color[i] >>  0) & 0xFF;
 
-            SDL_SetRenderDrawColor(sdl.renderer, r, g, b, a);
-            SDL_RenderFillRect(sdl.renderer, &rect);
+            SDL_SetRenderDrawColor(sdl->renderer, r, g, b, a);
+            SDL_RenderFillRect(sdl->renderer, &rect);
         
-            if (config.pixel_outlines) {
-                SDL_SetRenderDrawColor(sdl.renderer, bg_r, bg_g, bg_b, bg_a);
-                SDL_RenderDrawRect(sdl.renderer, &rect);
+            if (config->pixel_outlines) {
+                SDL_SetRenderDrawColor(sdl->renderer, bg_r, bg_g, bg_b, bg_a);
+                SDL_RenderDrawRect(sdl->renderer, &rect);
             }
 
         } else {
-            if (chip8->pixel_color[i] != config.bg_color) {
+            if (chip8->pixel_color[i] != config->bg_color) {
                 // Lerp
                 chip8->pixel_color[i] = color_lerp(chip8->pixel_color[i], 
-                                                   config.bg_color, 
-                                                   config.color_lerp_rate);
+                                                   config->bg_color, 
+                                                   config->color_lerp_rate);
             }
 
             const uint8_t r = (chip8->pixel_color[i] >> 24) & 0xFF;
@@ -249,12 +250,12 @@ void update_screen(const sdl_t sdl, const config_t config, chip8_t *chip8) {
             const uint8_t b = (chip8->pixel_color[i] >>  8) & 0xFF;
             const uint8_t a = (chip8->pixel_color[i] >>  0) & 0xFF;
 
-            SDL_SetRenderDrawColor(sdl.renderer, r, g, b, a);
-            SDL_RenderFillRect(sdl.renderer, &rect);
+            SDL_SetRenderDrawColor(sdl->renderer, r, g, b, a);
+            SDL_RenderFillRect(sdl->renderer, &rect);
         }
     }
 
-    SDL_RenderPresent(sdl.renderer);
+    SDL_RenderPresent(sdl->renderer);
 }
 
 // semelhante ao congelar da vm
@@ -292,14 +293,37 @@ bool carregar_estado_chip(chip8_t *chip8, const char *filename) {
   return true;
 }
 
-void update_timers(const sdl_t sdl, chip8_t *chip8) {
+void update_timers(const sdl_t *sdl, chip8_t *chip8) {
     if (chip8->delay_timer > 0) 
         chip8->delay_timer--;
 
     if (chip8->sound_timer > 0) {
         chip8->sound_timer--;
-        SDL_PauseAudioDevice(sdl.dev, 0); // Play sound
+        SDL_PauseAudioDevice(sdl->dev, 0); // Play sound
     } else {
-        SDL_PauseAudioDevice(sdl.dev, 1); // Pause sound
+        SDL_PauseAudioDevice(sdl->dev, 1); // Pause sound
     }
+}
+
+void process_frame(chip8_t *chip8, config_t *config, sdl_t *sdl) {
+    uint64_t remaining_instructions = config->insts_per_second / 60;
+    static const float frame_duration = 1000.0f / 60;
+    uint64_t expected_moment_to_draw = SDL_GetTicks64() + frame_duration;
+
+    while (!chip8->draw && remaining_instructions > 0) {
+        remaining_instructions--;
+
+        emulate_instruction(chip8, config);
+
+        if ((config->current_extension == CHIP8) && chip8->draw) break;
+    }
+
+    while (SDL_GetTicks64() < expected_moment_to_draw) {continue;}
+
+    // Update window with changes every 60hz
+    if (chip8->draw) {
+      update_screen(sdl, config, chip8);
+      chip8->draw = false;
+    }
+    update_timers(sdl, chip8);
 }

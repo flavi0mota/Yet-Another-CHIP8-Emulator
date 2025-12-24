@@ -30,37 +30,8 @@ int main(int argc, char **argv) {
 
     // Loop do emulador
     while (chip8.state != QUIT) {
-        // suporte a teclado
         handle_input(&chip8, &config);
-
-        if (chip8.state == PAUSE) continue;
-
-        const uint64_t start_frame_time = SDL_GetPerformanceCounter();
-        
-        // Emulate CHIP8 Instructions for this emulator "frame" (60hz)
-        for (uint32_t i = 0; i < config.insts_per_second / 60; i++) {
-            emulate_instruction(&chip8, config);
-
-            // If drawing on CHIP8, only draw 1 sprite this frame (display wait)
-            if ((config.current_extension == CHIP8) && 
-                (chip8.inst.opcode >> 12 == 0xD)) 
-                break;  
-        }
-
-        // Tempo de execução da instrução
-        const uint64_t end_frame_time = SDL_GetPerformanceCounter();
-
-        // Delay 60hz/60fps (16.67ms)
-        const double time_elapsed = (double)((end_frame_time - start_frame_time) * 1000) / SDL_GetPerformanceFrequency();
-
-        SDL_Delay(16.67f > time_elapsed ? 16.67f - time_elapsed : 0);
-
-        // Update window with changes every 60hz
-        if (chip8.draw) {
-          update_screen(sdl, config, &chip8);
-          chip8.draw = false;
-        }
-        update_timers(sdl, &chip8);
+        if (chip8.state != PAUSE) process_frame(&chip8, &config, &sdl);
     }
     final_cleanup(sdl); 
 

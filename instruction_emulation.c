@@ -2,7 +2,7 @@
 
 #include "instruction_emulation.h"
 
-void emulate_instruction(chip8_t *chip8, const config_t config) {
+void emulate_instruction(chip8_t *chip8, config_t *config) {
     bool carry;   // valor carry flag/VF
 
     // Get next opcode from ram 
@@ -89,21 +89,21 @@ void emulate_instruction(chip8_t *chip8, const config_t config) {
                 case 1:
                     // 0x8XY1: Set register VX |= VY
                     chip8->V[chip8->inst.X] |= chip8->V[chip8->inst.Y];
-                    if (config.current_extension == CHIP8)
+                    if (config->current_extension == CHIP8)
                         chip8->V[0xF] = 0;  // Reset VF to 0
                     break;
 
                 case 2:
                     // 0x8XY2: Set register VX &= VY
                     chip8->V[chip8->inst.X] &= chip8->V[chip8->inst.Y];
-                    if (config.current_extension == CHIP8)
+                    if (config->current_extension == CHIP8)
                         chip8->V[0xF] = 0;  // Reset VF to 0
                     break;
 
                 case 3:
                     // 0x8XY3: Set register VX ^= VY
                     chip8->V[chip8->inst.X] ^= chip8->V[chip8->inst.Y];
-                    if (config.current_extension == CHIP8)
+                    if (config->current_extension == CHIP8)
                         chip8->V[0xF] = 0;  // Reset VF to 0
                     break;
 
@@ -125,7 +125,7 @@ void emulate_instruction(chip8_t *chip8, const config_t config) {
 
                 case 6:
                     // 0x8XY6: Set register VX >>= 1, store shifted off bit in VF
-                    if (config.current_extension == CHIP8) {
+                    if (config->current_extension == CHIP8) {
                         carry = chip8->V[chip8->inst.Y] & 1;    // Use VY
                         chip8->V[chip8->inst.X] = chip8->V[chip8->inst.Y] >> 1; // Set VX = VY result
                     } else {
@@ -145,7 +145,7 @@ void emulate_instruction(chip8_t *chip8, const config_t config) {
                     break;
 
                 case 0xE:
-                    if (config.current_extension == CHIP8) { 
+                    if (config->current_extension == CHIP8) { 
                         carry = (chip8->V[chip8->inst.Y] & 0x80) >> 7; // Use VY
                         chip8->V[chip8->inst.X] = chip8->V[chip8->inst.Y] << 1; // Set VX = VY result
                     } else {
@@ -188,8 +188,8 @@ void emulate_instruction(chip8_t *chip8, const config_t config) {
             //   Screen pixels are XOR'd with sprite bits, 
             //   VF (Carry flag) is set if any screen pixels are set off; This is useful
             //   for collision detection or other reasons.
-            uint8_t X_coord = chip8->V[chip8->inst.X] % config.window_width;
-            uint8_t Y_coord = chip8->V[chip8->inst.Y] % config.window_height;
+            uint8_t X_coord = chip8->V[chip8->inst.X] % config->window_width;
+            uint8_t Y_coord = chip8->V[chip8->inst.Y] % config->window_height;
             const uint8_t orig_X = X_coord; // Original X value
 
             chip8->V[0xF] = 0;  // Initialize carry flag to 0
@@ -202,7 +202,7 @@ void emulate_instruction(chip8_t *chip8, const config_t config) {
 
                 for (int8_t j = 7; j >= 0; j--) {
                     // set carry flag
-                    bool *pixel = &chip8->display[Y_coord * config.window_width + X_coord]; 
+                    bool *pixel = &chip8->display[Y_coord * config->window_width + X_coord]; 
                     const bool sprite_bit = (sprite_data & (1 << j));
 
                     if (sprite_bit && *pixel) {
@@ -213,10 +213,10 @@ void emulate_instruction(chip8_t *chip8, const config_t config) {
                     *pixel ^= sprite_bit;
 
                     // Para de desenhar se bater no canto da tela
-                    if (++X_coord >= config.window_width) break;
+                    if (++X_coord >= config->window_width) break;
                 }
 
-                if (++Y_coord >= config.window_height) break;
+                if (++Y_coord >= config->window_height) break;
             }
             chip8->draw = true; // atualiza tela no próximo tick 60hz
             break;
@@ -302,7 +302,7 @@ void emulate_instruction(chip8_t *chip8, const config_t config) {
                 case 0x55:
                     // 0xFX55: Register dump V0-VX inclusive to memory offset from I;
                     for (uint8_t i = 0; i <= chip8->inst.X; i++)  {
-                        if (config.current_extension == CHIP8) 
+                        if (config->current_extension == CHIP8) 
                             chip8->ram[chip8->I++] = chip8->V[i]; // Incremento de reg I
                         else
                             chip8->ram[chip8->I + i] = chip8->V[i]; 
@@ -312,7 +312,7 @@ void emulate_instruction(chip8_t *chip8, const config_t config) {
                 case 0x65:
                     // 0xFX65: Register load V0-VX inclusive from memory offset from I;
                     for (uint8_t i = 0; i <= chip8->inst.X; i++) {
-                        if (config.current_extension == CHIP8) 
+                        if (config->current_extension == CHIP8) 
                             chip8->V[i] = chip8->ram[chip8->I++]; // Incremento de reg I
                         else
                             chip8->V[i] = chip8->ram[chip8->I + i];
