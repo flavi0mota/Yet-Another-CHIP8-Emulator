@@ -309,6 +309,7 @@ void process_frame(chip8_t *chip8, config_t *config, sdl_t *sdl) {
     uint64_t remaining_instructions = config->insts_per_second / 60;
     static const float frame_duration = 1000.0f / 60;
     uint64_t expected_moment_to_draw = SDL_GetTicks64() + frame_duration;
+    uint64_t moment_after_instruction_cycle;
 
     while (!chip8->draw && remaining_instructions > 0) {
         remaining_instructions--;
@@ -318,7 +319,10 @@ void process_frame(chip8_t *chip8, config_t *config, sdl_t *sdl) {
         if ((config->current_extension == CHIP8) && chip8->draw) break;
     }
 
-    while (SDL_GetTicks64() < expected_moment_to_draw) {continue;}
+    moment_after_instruction_cycle = SDL_GetTicks64();
+
+    if (moment_after_instruction_cycle < expected_moment_to_draw)
+    { SDL_Delay(expected_moment_to_draw - moment_after_instruction_cycle); }
 
     // Update window with changes every 60hz
     if (chip8->draw) {
