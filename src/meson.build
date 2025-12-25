@@ -1,8 +1,8 @@
 src = files(
 	'main.c',
+	'emulator.c',
 	'emulated.c',
-	'emulation.c',
-	'interaction/sdl/input.c',
+	'user_interface/sdl/interface.c',
 )
 
 executable('tracua-chip8',
