@@ -1,4 +1,3 @@
-*.bin
-chip8
-*.ch8
-*.o
+build/
+roms/
+tmp.md
