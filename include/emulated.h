@@ -38,3 +38,9 @@ struct EmulatedSystem {
   const char *rom_name;
   struct Instruction instruction;
 };
+
+// Writes struct Emulator->EmulatedSystem data to a binary file
+bool emulated_save_state(struct EmulatedSystem *emulated_system, const char *filename);
+
+// Loads data from a binary file to Emulator->EmulatedSystem
+bool emulated_load_state(struct EmulatedSystem *emulated_system, const char *filename);
