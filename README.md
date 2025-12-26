@@ -27,19 +27,30 @@ Um emulador **CHIP-8** robusto escrito em C puro utilizando a biblioteca **SDL2*
 ## 🛠️ Instalação e Compilação
 
 ### Pré-requisitos
-Você precisará do compilador `gcc`, `make` e da biblioteca de desenvolvimento da `SDL2`.
+
+Você precisará de:
+
+ - Compilador (gcc ou clang)
+
+ - Meson e Ninja (sistema de build)
+
+ - Biblioteca SDL2.
 
 **Debian/Ubuntu:**
+
 ```bash
-sudo apt-get install build-essential libsdl2-dev
+sudo apt-get install build-essential meson ninja libsdl2-dev
 ```
+
 **Compilando**
-Digite make em seu terminal para compilar o chip8
+
 ```bash
-make
+meson setup build/
+ninja -C build/
 ```
 
 **Utilização**
+
 ```bash
-$ ./chip8 'ROM_DESEJADA'
+./build/src/tracua-chip8 'ROM_DESEJADA'
 ```
