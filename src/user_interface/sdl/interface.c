@@ -240,22 +240,22 @@ void emulator_user_interface_handle_keyboard_event_key_down(struct UserInterface
               //emulator->user_interface->volume += 500;
           break;
 
-      // Save state on F5
+      // Save state
       case SDLK_F5:
-          //if (save_estado_chip(chip8, "save_state.bin")) {
-              //puts("State saved successfully.");
-          //} else {
-              //puts("Failed to save state.");
-          //}
+          if (emulated_save_state(emulated_system, "save_state.bin")) {
+              puts("State saved successfully.");
+          } else {
+              puts("Failed to save state.");
+          }
           break;
 
-      // Load state on F9
-      case SDLK_F9: // TODO
-        //  if (emulator_load_state(emulated_system, "save_state.bin")) {
-              //puts("State loaded successfully.");
-          //} else {
-              //puts("Failed to load state.");
-          //}
+      // Load state
+      case SDLK_F9:
+          if (emulated_load_state(emulated_system, "save_state.bin")) {
+              puts("State loaded successfully.");
+          } else {
+              puts("Failed to load state.");
+          }
           break;
 
       // Map qwerty keys to CHIP8 keypad
