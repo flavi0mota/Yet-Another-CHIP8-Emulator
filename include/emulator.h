@@ -32,10 +32,17 @@ struct Emulator {
   const char *rom_name; // binary file loaded into the virtual machine
 };
 
-bool emulator_save_state(struct Emulator *emulator, const char *filename);
-bool emulator_load_state(struct Emulator *emulator, const char *filename);
+// Loads binary file to emulated system memory
 bool emulator_load_rom(struct Emulator *emulator, const char* rom_name);
+
+// Initializes emulator
 bool emulator_initialize(struct Emulator *emulator);
+
+// Performs interpretation cycle
 void emulator_update(struct Emulator *emulator);
+
+// Consumes and emulates an instruction
 bool emulator_emulate_instruction(struct Emulator *emulator);
+
+// Destroys struct Emulator
 void emulator_destroy(struct Emulator *emulator);

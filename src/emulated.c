@@ -1,5 +1,8 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
+
+#include "emulated.h"
 
 const uint32_t emulated_system_entry_point = 0x200; // CHIP8 Roms will be loaded to 0x200
 const uint8_t emulated_system_font[] = {
@@ -20,3 +23,34 @@ const uint8_t emulated_system_font[] = {
     0xF0, 0x80, 0xF0, 0x80, 0xF0,   // E
     0xF0, 0x80, 0xF0, 0x80, 0x80,   // F
 };
+
+bool emulated_save_state(struct EmulatedSystem *emulated_system, const char *filename) {
+    FILE *file = fopen(filename, "wb");
+    if (!file) return false;
+    else if (fwrite(emulated_system, sizeof(struct EmulatedSystem), 1, file) != 1) {
+        fclose(file);
+        return false;
+    }
+    else {
+        fclose(file);
+        return true;
+    }
+}
+
+bool emulated_load_state(struct EmulatedSystem *emulated_system, const char *filename) {
+    FILE *file = fopen(filename, "rb");
+
+    if (!file) {
+      fprintf(stderr, "Não foi possível encontrar o save %s\n", filename);
+      return false;
+    }
+    else if (fread(emulated_system, sizeof(struct EmulatedSystem), 1, file) != 1) {
+        fprintf(stderr, "Não foi possível ler o save %s\n", filename);
+        fclose(file);
+        return false;
+    }
+    else {
+        fclose(file);
+        return true;
+    }
+}
