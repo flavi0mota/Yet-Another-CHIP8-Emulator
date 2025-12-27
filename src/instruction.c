@@ -48,7 +48,7 @@ struct DecodedInstruction decoded_intruction_from_encoded_instruction(uint16_t e
     else if (involves_registers) {
         decoded_instruction.register_indexes[0] = (encoded_instruction & 0x0F00) >> 8;
         decoded_instruction.register_indexes[1] = (encoded_instruction & 0x00F0) >> 4;
-        decoded_instruction.value = (encoded_instruction & 0x000F);
+        decoded_instruction.half_value = (encoded_instruction & 0x000F);
     }
 
     return decoded_instruction;
