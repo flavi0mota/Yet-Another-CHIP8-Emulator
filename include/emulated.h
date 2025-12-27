@@ -4,16 +4,9 @@
 
 #include <stdint.h>
 
-#define STACK_SIZE 12
+#include "instruction.h"
 
-struct Instruction {
-  uint16_t opcode; // 1º half-byte
-  uint16_t NNN; // 2º, 3º and 4º half-byte (12-bit memory address)
-  uint8_t NN; // 3º and 4º half-byte (8-bit number)
-  uint8_t N; // 4º half-byte
-  uint8_t X; // 2º half-byte
-  uint8_t Y; // 3º half-byte
-};
+#define STACK_SIZE 12
 
 struct EmulatedSystem {
   enum {
@@ -21,6 +14,11 @@ struct EmulatedSystem {
     RUNNING,
     PAUSE,
   } state;
+  enum {
+    CHIP8,
+    SUPERCHIP,
+    XOCHIP,
+  } extension;
   uint8_t ram[4096]; // 4 kilobytes of fully writable RAM
   bool display[64*32]; // 64x32 pixels, each can be on or off (boolean)
   uint16_t stack[STACK_SIZE]; // stores 16-bit adresses, used for function call and return
@@ -32,5 +30,24 @@ struct EmulatedSystem {
   uint8_t sound_timer; // like the delay_timer
   bool keypad[16];
   const char *rom_name;
-  struct Instruction instruction;
+
+  // data as it appears in the rom
+  //
+  // most significant byte first, the lowest 4 bits form the opcode
+  //
+  // then may follow either:
+  //
+  //  - 12-bit memory address
+  //
+  //  - 4bit-value and 8-bit value.
+  //
+  //  - 3 parts, 4-bit value each
+  uint16_t encoded_instruction; 
+
+  struct DecodedInstruction decoded_instruction;
 };
+
+void emulated_system_emulate_instruction(struct EmulatedSystem *emulated_system);
+void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system);
+void emulated_system_emulate_bitwise_arithmetic(struct EmulatedSystem *emulated_system);
+void emulated_system_emulate_misc(struct EmulatedSystem *emulated_system);

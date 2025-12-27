@@ -1,10 +1,15 @@
 emulator_src = files(
-	'main.c',
-	'emulator.c',
-	'emulated.c',
-	'user_interface/sdl/interface.c',
+	'emulator/main.c',
+	'emulator/instruction.c',
+	'emulator/emulator.c',
+	'emulator/emulated.c',
+	'emulator/user_interface/sdl/interface.c',
 )
 
 assembler_src = files(
-	'assembler.c',
+	'assembler/main.c',
+)
+
+disassembler_src = files(
+	'disassembler/main.c',
 )

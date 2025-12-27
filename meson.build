@@ -25,3 +25,11 @@ executable('tracua-chip8-assembler',
 		'include'
 	],
 )
+
+executable('tracua-chip8-disassembler',
+	disassembler_src,
+	install : false,
+	include_directories: [
+		'include'
+	],
+)
