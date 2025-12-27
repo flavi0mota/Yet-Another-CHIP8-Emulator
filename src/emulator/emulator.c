@@ -1,7 +1,6 @@
 // Emulator
 
 #include "emulator.h"
-#include "instruction.h"
 
 bool emulator_load_rom(struct Emulator *emulator, const char* rom_name) {
     // Open ROM file

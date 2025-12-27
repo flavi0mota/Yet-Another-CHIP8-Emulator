@@ -1,4 +1,5 @@
 #include "instruction.h"
+#include <stdbool.h>
 
 struct DecodedInstruction decoded_intruction_from_encoded_instruction(uint16_t encoded_instruction) {
     struct DecodedInstruction decoded_instruction = {0};

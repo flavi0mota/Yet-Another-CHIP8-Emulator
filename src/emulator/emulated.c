@@ -258,7 +258,7 @@ void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system) {
     uint32_t desired_window_width = 64; // TODO: fix this
     uint32_t desired_window_height = 32;
     uint8_t X_coord = emulated_system->V[emulated_system->decoded_instruction.register_indexes[0]] % desired_window_width;
-    uint8_t Y_coord = emulated_system->V[emulated_system->decoded_instruction.register_indexes[0]] % desired_window_height;
+    uint8_t Y_coord = emulated_system->V[emulated_system->decoded_instruction.register_indexes[1]] % desired_window_height;
     const uint8_t orig_X = X_coord; // Original X value
 
     emulated_system->V[0xF] = 0;  // Initialize carry flag to 0
@@ -281,7 +281,7 @@ void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system) {
             // XOR display pixel
             *pixel ^= sprite_bit;
 
-            // Para de desenhar se bater no canto da tela
+            // Para de desenhar se bater no cantos para esquerda ou direita
             if (++X_coord >= desired_window_width) break;
         }
 
