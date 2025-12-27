@@ -8,10 +8,6 @@
 #include "emulated.h"
 #include "user_interface/sdl/interface.h"
 
-// From emulated.c
-extern const uint32_t emulated_system_entry_point;
-extern const uint8_t emulated_system_font;
-
 struct Emulator {
   // how many instructions are executed each second.
   uint32_t instructions_per_second;
@@ -25,9 +21,14 @@ struct Emulator {
   const char *rom_name; // binary file loaded into the virtual machine
 };
 
-bool emulator_save_state(struct Emulator *emulator, const char *filename);
-bool emulator_load_state(struct Emulator *emulator, const char *filename);
+// Loads binary file to emulated system memory
 bool emulator_load_rom(struct Emulator *emulator, const char* rom_name);
+
+// Initializes emulator
 bool emulator_initialize(struct Emulator *emulator);
+
+// Performs interpretation cycle
 void emulator_update(struct Emulator *emulator);
+
+// Destroys struct Emulator
 void emulator_destroy(struct Emulator *emulator);

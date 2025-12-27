@@ -8,6 +8,10 @@
 
 #define STACK_SIZE 12
 
+// From emulated.c
+extern const uint32_t emulated_system_entry_point;
+extern const uint8_t emulated_system_font[16][5];
+
 struct EmulatedSystem {
   enum {
     QUIT,
@@ -46,6 +50,12 @@ struct EmulatedSystem {
 
   struct DecodedInstruction decoded_instruction;
 };
+
+// Writes struct Emulator->EmulatedSystem data to a binary file
+bool emulated_save_state(struct EmulatedSystem *emulated_system, const char *filename);
+
+// Loads data from a binary file to Emulator->EmulatedSystem
+bool emulated_load_state(struct EmulatedSystem *emulated_system, const char *filename);
 
 void emulated_system_emulate_instruction(struct EmulatedSystem *emulated_system);
 void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system);

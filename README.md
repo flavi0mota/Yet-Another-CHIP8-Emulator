@@ -1,4 +1,4 @@
-# 👾 CHIP-8 Emulator
+# CHIP-8 Emulator
 
 ![Language](https://img.shields.io/badge/language-C-00599C?style=for-the-badge&logo=c&logoColor=white)
 ![Library](https://img.shields.io/badge/library-SDL2-FF3D00?style=for-the-badge&logo=sdl&logoColor=white)
@@ -13,9 +13,9 @@ Um emulador **CHIP-8** robusto escrito em C puro utilizando a biblioteca **SDL2*
 * **Vídeo:** Renderização acelerada por hardware via SDL2 com suporte a scaling.
 * **Áudio:** Sintetizador de onda quadrada (Square Wave) gerado matematicamente em tempo real.
 * **Efeitos Visuais:** *Color Lerping* configurável para suavização de transição de pixels (ghosting).
-* **Save States:** Sistema de Salvar/Carregar estado da máquina (`F5`/`F9`).
+* **Save States:** Sistema de Salvar/Carregar estado da máquina (`F5`/`F9`). 
 * **Debug/Controle:** Pausa, Reset e ajuste de volume em tempo real.
-* **Compatibilidade:** Tratamento de *quirks* (diferenças de comportamento) entre CHIP-8 original e implementações modernas (Shift, Load/Store).
+* **Compatibilidade:** Tratamento de quirks (diferenças de comportamento) entre CHIP-8 original e implementações modernas (Shift, Load/Store).
 
 ---
 
@@ -24,22 +24,41 @@ Um emulador **CHIP-8** robusto escrito em C puro utilizando a biblioteca **SDL2*
 
 ---
 
-## 🛠️ Instalação e Compilação
+## Instalação e Compilação
 
 ### Pré-requisitos
-Você precisará do compilador `gcc`, `make` e da biblioteca de desenvolvimento da `SDL2`.
+
+Você precisará de:
+
+ - Compilador (gcc ou clang)
+
+ - Meson e Ninja (sistema de build)
+
+ - Biblioteca SDL2.
 
 **Debian/Ubuntu:**
+
 ```bash
-sudo apt-get install build-essential libsdl2-dev
-```
-**Compilando**
-Digite make em seu terminal para compilar o chip8
-```bash
-make
+sudo apt-get install build-essential meson ninja libsdl2-dev
 ```
 
-**Utilização**
+**Compilando**
+
 ```bash
-$ ./chip8 'ROM_DESEJADA'
+meson setup build/
+ninja -C build/
+Você precisará do compilador `gcc`, `make` e da biblioteca de desenvolvimento da `SDL2`.
+Procure o equivalente desse comando em sua distribuição
+
+
+```bash
+sudo apt-get install build-essential libsdl2-dev meson ninja-build
+```
+
+##TODO: Como compilar com meson
+
+**Utilização**
+
+```bash
+./build/src/tracua-chip8 'ROM_DESEJADA'
 ```
