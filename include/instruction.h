@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-// Depends on the 4 higher bits from the 16-bit instructiom
+// Depends on the 4 higher bits from the 16-bit instruction
 enum DecodedInstructionType {
   INVALID,
   CLEAR,
@@ -14,15 +14,22 @@ enum DecodedInstructionType {
   IF_EQUAL_REGISTERS_THEN_SKIP,
   VALUE_TO_REGISTER,
   SUM_REGISTER,
-  REGISTER_BITWISE_AND_ARITHMETIC,
+  REGISTER_BITWISE_AND_ARITHMETIC, // TODO: expand this
   IF_NOT_EQUAL_REGISTERS_THEN_SKIP,
   ADDRESS_TO_REGISTER_I,
   JUMP_WITH_OFFSET,
   RANDOM_NUMBER_TO_REGISTER,
   DRAW,
   SKIP_BY_KEY_STATE,
-  MISC,
+  MISC, // TODO: expand this
 };
+
+struct InstructionMnemonic {
+    enum DecodedInstructionType type;
+    const char* const name;
+};
+
+extern const struct InstructionMnemonic instruction_mnemonics[];
 
 // Convenient representation for each instruction
 struct DecodedInstruction {
@@ -55,5 +62,5 @@ struct DecodedInstruction {
   };
 };
 
-struct DecodedInstruction decoded_intruction_from_encoded_instruction(uint16_t encoded_instruction);
+struct DecodedInstruction decoded_instruction_from_encoded_instruction(uint16_t encoded_instruction);
 uint16_t encoded_instruction_from_decoded_instruction(struct DecodedInstruction decoded_intruction);

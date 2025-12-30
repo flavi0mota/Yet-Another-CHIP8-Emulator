@@ -81,7 +81,7 @@ void emulated_system_emulate_instruction(struct EmulatedSystem *emulated_system)
     // Consume encoded instruction
     emulated_system_consume_instruction(emulated_system);
     // Decode instruction
-    *decoded_instruction = decoded_intruction_from_encoded_instruction(emulated_system->encoded_instruction);
+    *decoded_instruction = decoded_instruction_from_encoded_instruction(emulated_system->encoded_instruction);
 
     switch (decoded_instruction->type) {
         case CLEAR:

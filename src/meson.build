@@ -3,7 +3,8 @@ emulator_src = files(
 	'instruction.c',
 	'emulator/emulator.c',
 	'emulator/emulated.c',
-	'emulator/user_interface/sdl/interface.c',
+	'user_interface/sdl/interface.c',
+	'user_interface/color_lerp.c',
 )
 
 assembler_src = files(
@@ -13,4 +14,5 @@ assembler_src = files(
 disassembler_src = files(
 	'disassembler/main.c',
 	'instruction.c',
+	'user_interface/instruction_print.c',
 )

@@ -1,6 +1,28 @@
 #include "instruction.h"
 
-struct DecodedInstruction decoded_intruction_from_encoded_instruction(uint16_t encoded_instruction) {
+// TODO: give long and short names to types.
+const struct InstructionMnemonic instruction_mnemonics[] = {
+    {.type = CLEAR, .name = "cls"},
+    {.type = RETURN, .name = "ret"},
+    {.type = JUMP, .name = "jp"},
+    {.type = SUBROUTINE, .name = "call"},
+    {.type = IF_EQUAL_TO_VALUE_THEN_SKIP, .name = "se"},
+    {.type = IF_NOT_EQUAL_TO_VALUE_THEN_SKIP, .name = "sne"},
+    {.type = IF_EQUAL_REGISTERS_THEN_SKIP, .name = "se"},
+    {.type = VALUE_TO_REGISTER, .name = "ld"},
+    {.type = SUM_REGISTER, .name = "add"},
+    {.type = REGISTER_BITWISE_AND_ARITHMETIC, .name = "bitwise_arithmetic"},
+    {.type = IF_NOT_EQUAL_REGISTERS_THEN_SKIP, .name = "sne"},
+    {.type = ADDRESS_TO_REGISTER_I, .name = "ld"},
+    {.type = JUMP_WITH_OFFSET, .name = "jp"},
+    {.type = RANDOM_NUMBER_TO_REGISTER, .name = "rnd"},
+    {.type = DRAW, .name = "drw"},
+    {.type = SKIP_BY_KEY_STATE, .name = "skp"}, // TODO: where is sknp?
+    {.type = MISC, .name = "misc"},
+    {.type = INVALID}, // Must terminate with this
+};
+
+struct DecodedInstruction decoded_instruction_from_encoded_instruction(uint16_t encoded_instruction) {
     struct DecodedInstruction decoded_instruction = {0};
 
     // Determine type of instruction and layout based on first 4 bits.
