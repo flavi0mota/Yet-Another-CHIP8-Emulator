@@ -1,4 +1,5 @@
 #include "instruction.h"
+#include <stdbool.h>
 
 // TODO: give long and short names to types.
 const struct InstructionMnemonic instruction_mnemonics[] = {

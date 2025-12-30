@@ -277,7 +277,7 @@ void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system) {
             // XOR display pixel
             *pixel ^= sprite_bit;
 
-            // Para de desenhar se bater no canto da tela
+            // Para de desenhar se bater no cantos para esquerda ou direita
             if (++X_coord >= desired_window_width) break;
         }
 
