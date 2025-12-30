@@ -26,7 +26,10 @@ struct UserInterface {
   bool should_play_sound;
 };
 
-uint32_t emulator_user_interface_color_lerp(const uint32_t start_color, const uint32_t end_color, const float t);
+// Misc
+uint32_t user_interface_color_lerp(const uint32_t start_color, const uint32_t end_color, const float t);
+
+// For emulator
 void emulator_user_interface_destroy(struct UserInterface *user_interface);
 void emulator_user_interface_clear_screen(struct UserInterface *user_interface);
 void emulator_user_interface_audio_callback(void *userdata, uint8_t *stream, int len);

@@ -81,13 +81,7 @@ void emulated_system_emulate_instruction(struct EmulatedSystem *emulated_system)
     // Consume encoded instruction
     emulated_system_consume_instruction(emulated_system);
     // Decode instruction
-    *decoded_instruction = decoded_intruction_from_encoded_instruction(emulated_system->encoded_instruction);
-
-    if (emulated_system->decoded_instruction.type == INVALID) {
-        fprintf(stderr, "Instrução inválida: %04X\n", emulated_system->encoded_instruction);
-        emulated_system->state = QUIT;
-        return;
-    }
+    *decoded_instruction = decoded_instruction_from_encoded_instruction(emulated_system->encoded_instruction);
 
     switch (decoded_instruction->type) {
         case CLEAR:
@@ -158,7 +152,9 @@ void emulated_system_emulate_instruction(struct EmulatedSystem *emulated_system)
             break;
         case INVALID:
         default:
-            break;
+            emulated_system->state = QUIT;
+            fprintf(stderr, "Instrução inválida: %04X\n", emulated_system->encoded_instruction);
+            return;
     }
 }
 
