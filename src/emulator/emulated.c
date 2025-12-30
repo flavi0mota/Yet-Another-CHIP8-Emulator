@@ -83,12 +83,6 @@ void emulated_system_emulate_instruction(struct EmulatedSystem *emulated_system)
     // Decode instruction
     *decoded_instruction = decoded_intruction_from_encoded_instruction(emulated_system->encoded_instruction);
 
-    if (emulated_system->decoded_instruction.type == INVALID) {
-        fprintf(stderr, "Instrução inválida: %04X\n", emulated_system->encoded_instruction);
-        emulated_system->state = QUIT;
-        return;
-    }
-
     switch (decoded_instruction->type) {
         case CLEAR:
             memset(&emulated_system->display[0], false, sizeof emulated_system->display);
@@ -158,7 +152,9 @@ void emulated_system_emulate_instruction(struct EmulatedSystem *emulated_system)
             break;
         case INVALID:
         default:
-            break;
+            emulated_system->state = QUIT;
+            fprintf(stderr, "Instrução inválida: %04X\n", emulated_system->encoded_instruction);
+            return;
     }
 }
 
@@ -258,7 +254,7 @@ void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system) {
     uint32_t desired_window_width = 64; // TODO: fix this
     uint32_t desired_window_height = 32;
     uint8_t X_coord = emulated_system->V[emulated_system->decoded_instruction.register_indexes[0]] % desired_window_width;
-    uint8_t Y_coord = emulated_system->V[emulated_system->decoded_instruction.register_indexes[0]] % desired_window_height;
+    uint8_t Y_coord = emulated_system->V[emulated_system->decoded_instruction.register_indexes[1]] % desired_window_height;
     const uint8_t orig_X = X_coord; // Original X value
 
     emulated_system->V[0xF] = 0;  // Initialize carry flag to 0
