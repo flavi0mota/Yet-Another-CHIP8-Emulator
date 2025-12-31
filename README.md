@@ -62,3 +62,9 @@ sudo apt-get install build-essential libsdl2-dev meson ninja-build
 ```bash
 ./build/src/tracua-chip8 'ROM_DESEJADA'
 ```
+
+
+ESTE PROJETO NÃO SERIA POSSÍVEL SEM OS SEGUINTES RECURSOS:
+
+Cowgod's CHIP-8 Technical Reference: http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
+Tobias V. Langhoff Guide to Write a CHIP-8 Emulator: https://tobiasvl.github.io/blog/write-a-chip-8-emulator/
