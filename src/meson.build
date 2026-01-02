@@ -9,6 +9,7 @@ emulator_src = files(
 
 assembler_src = files(
 	'assembler/main.c',
+	'instruction.c',
 )
 
 disassembler_src = files(
