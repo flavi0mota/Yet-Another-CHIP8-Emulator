@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 #include "emulated.h"
 
@@ -24,6 +25,11 @@ struct UserInterface {
   uint32_t pixel_color[64*32];
   uint64_t expected_moment_to_draw;
   bool should_play_sound;
+  TTF_Font* font;
+  struct {
+    SDL_Surface* message_surface;
+    SDL_Texture* message;
+  } pause_menu;
 };
 
 // Misc

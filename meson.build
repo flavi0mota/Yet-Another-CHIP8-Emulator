@@ -4,6 +4,7 @@ project('tracua_chip8', 'c',
 )
 
 sdl2_dep = dependency('sdl2')
+sdl2_ttf_dep = dependency('sdl2_ttf')
 
 cc = meson.get_compiler('c')
 
@@ -11,7 +12,7 @@ subdir('src')
 
 executable('tracua-chip8-emulator',
 	emulator_src,
-	dependencies : [sdl2_dep],
+	dependencies : [sdl2_dep, sdl2_ttf_dep],
 	install : false,
 	include_directories: [
 		'include'

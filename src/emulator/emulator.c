@@ -56,26 +56,28 @@ bool emulator_initialize(struct Emulator *emulator) {
 }
 
 void emulator_update(struct Emulator *emulator) {
-    static const float frame_duration = 1000.0f / 60;
-    uint64_t remaining_instructions = emulator->instructions_per_second / 60;
+    if (emulator->emulated_system.state != PAUSE) {
+        static const float frame_duration = 1000.0f / 60;
+        uint64_t remaining_instructions = emulator->instructions_per_second / 60;
 
-    emulator->user_interface.expected_moment_to_draw = SDL_GetTicks64() + frame_duration;
+        emulator->user_interface.expected_moment_to_draw = SDL_GetTicks64() + frame_duration;
 
-    // Instruction cycle (many of these occur each second)
-    while (remaining_instructions > 0) {
-        remaining_instructions--;
-        emulated_system_emulate_instruction(&emulator->emulated_system);
-    }
+        // Instruction cycle (many of these occur each second)
+        while (remaining_instructions > 0) {
+            remaining_instructions--;
+            emulated_system_emulate_instruction(&emulator->emulated_system);
+        }
 
-    // Update timers
-    if (emulator->emulated_system.delay_timer > 0) emulator->emulated_system.delay_timer--;
+        // Update timers
+        if (emulator->emulated_system.delay_timer > 0) emulator->emulated_system.delay_timer--;
 
-    if (emulator->emulated_system.sound_timer > 0) {
-        emulator->emulated_system.sound_timer--;
-        emulator->user_interface.should_play_sound = true;
-    }
-    else {
-        emulator->user_interface.should_play_sound = false;
+        if (emulator->emulated_system.sound_timer > 0) {
+            emulator->emulated_system.sound_timer--;
+            emulator->user_interface.should_play_sound = true;
+        }
+        else {
+            emulator->user_interface.should_play_sound = false;
+        }
     }
 
     // Update user interface
