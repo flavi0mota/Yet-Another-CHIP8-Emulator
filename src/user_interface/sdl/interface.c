@@ -2,9 +2,15 @@
 #include "user_interface/color_lerp.h"
 
 // pause_menu.c
+// Draws pause menu
 static void pause_menu_user_interface_draw(struct UserInterface *user_interface);
 
+// disassembling.c
+// Prints instruction decoding info on screen in real time
+static inline void disassembling_user_interface_draw(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system);
+
 #include "pause_menu.c"
+#include "disassembling.c"
 
 void emulator_user_interface_destroy(struct UserInterface *user_interface) {
     SDL_DestroyRenderer(user_interface->renderer);
@@ -191,6 +197,7 @@ static void emulated_user_interface_draw(struct UserInterface *user_interface, s
             SDL_RenderFillRect(user_interface->renderer, &rect);
         }
     }
+    disassembling_user_interface_draw(user_interface, emulated_system);
     SDL_RenderPresent(user_interface->renderer);
 }
 

@@ -46,7 +46,7 @@ bool emulator_initialize(struct Emulator *emulator) {
     emulator->emulated_system.state = RUNNING;
     emulator->emulated_system.PC = emulated_system_entry_point;
     emulator->emulated_system.stack_ptr = &emulator->emulated_system.stack[0];
-    emulator->instructions_per_second = 600;
+    emulator->instructions_per_second = 60;
     emulator->emulated_system.extension = CHIP8;
 
     emulator_user_interface_initialize(&emulator->user_interface, &emulator->emulated_system);

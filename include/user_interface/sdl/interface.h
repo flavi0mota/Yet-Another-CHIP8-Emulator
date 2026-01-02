@@ -30,6 +30,11 @@ struct UserInterface {
     SDL_Surface* message_surface;
     SDL_Texture* message;
   } pause_menu;
+  struct {
+    bool is_active;
+    SDL_Surface* message_surface;
+    SDL_Texture* message;
+  } disassembling;
 };
 
 // Misc
