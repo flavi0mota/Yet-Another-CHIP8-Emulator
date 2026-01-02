@@ -1,7 +1,10 @@
-#include "instruction.h"
 #include <stdbool.h>
+#include <stdio.h>
+
+#include "instruction.h"
 
 // TODO: give long and short names to types.
+// TODO: decied about instruction overload, example: jp, ld.
 const struct InstructionMnemonic instruction_mnemonics[] = {
     {.type = CLEAR, .name = "cls"},
     {.type = RETURN, .name = "ret"},
@@ -22,6 +25,36 @@ const struct InstructionMnemonic instruction_mnemonics[] = {
     {.type = MISC, .name = "misc"},
     {.type = INVALID}, // Must terminate with this
 };
+
+struct DecodedInstruction decoded_instruction_from_string(const char *string) {
+    struct DecodedInstruction decoded_instruction = { .type = INVALID };
+
+    // Get type
+    char mnemonic[20] = {0};
+
+    if (sscanf(string, "%s\n", mnemonic) == 1) {
+        decoded_instruction.operands_layout = NONE;
+    }
+    else if (sscanf(string, "%s V%u, %u\n", mnemonic, (unsigned int*)&decoded_instruction.register_index, (unsigned int*)&decoded_instruction.value) == 3) {
+        decoded_instruction.operands_layout = REGISTER_AND_VALUE;
+    }
+    else if (sscanf(string, "%s %x\n", mnemonic, (unsigned int*)&decoded_instruction.address) == 2) {
+        decoded_instruction.operands_layout = ADDRESS;
+    }
+    else {
+        fprintf(stderr, "Line looks strange O_o\n");
+        return decoded_instruction;
+    }
+
+    for (int i=0; instruction_mnemonics[i].type != INVALID ; i++) {
+        if (strcmp(mnemonic, instruction_mnemonics[i].name) == 0)
+            decoded_instruction.type = instruction_mnemonics[i].type;
+    }
+
+    // TODO: check for correctness of type and operands
+
+    return decoded_instruction;
+}
 
 struct DecodedInstruction decoded_instruction_from_encoded_instruction(uint16_t encoded_instruction) {
     struct DecodedInstruction decoded_instruction = {0};

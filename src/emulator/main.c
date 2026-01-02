@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
         srand(time(NULL));
 
         while (emulator.emulated_system.state != QUIT) {
-            if (emulator.emulated_system.state != PAUSE) emulator_update(&emulator);
+            emulator_update(&emulator);
         }
         emulator_destroy(&emulator); 
         return EXIT_SUCCESS;
