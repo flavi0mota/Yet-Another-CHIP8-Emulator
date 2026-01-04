@@ -257,7 +257,7 @@ static void emulator_user_interface_handle_keyboard_event_key_down(struct UserIn
 
       // Save state
       case SDLK_F5:
-          if (emulated_save_state(emulated_system, "save_state.bin")) {
+          if (emulated_state_save(emulated_system, "save_state.bin")) {
               puts("State saved successfully.");
           } else {
               puts("Failed to save state.");
@@ -266,7 +266,7 @@ static void emulator_user_interface_handle_keyboard_event_key_down(struct UserIn
 
       // Load state
       case SDLK_F9:
-          if (emulated_load_state(emulated_system, "save_state.bin")) {
+          if (emulated_state_load(emulated_system, "save_state.bin")) {
               puts("State loaded successfully.");
           } else {
               puts("Failed to load state.");

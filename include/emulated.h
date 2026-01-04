@@ -51,11 +51,15 @@ struct EmulatedSystem {
   struct DecodedInstruction decoded_instruction;
 };
 
+// emulated_state.c
+
 // Writes struct Emulator->EmulatedSystem data to a binary file
-bool emulated_save_state(struct EmulatedSystem *emulated_system, const char *filename);
+bool emulated_state_save(struct EmulatedSystem *emulated_system, const char *filename);
 
 // Loads data from a binary file to Emulator->EmulatedSystem
-bool emulated_load_state(struct EmulatedSystem *emulated_system, const char *filename);
+bool emulated_state_load(struct EmulatedSystem *emulated_system, const char *filename);
+
+// emulated.c
 
 void emulated_system_emulate_instruction(struct EmulatedSystem *emulated_system);
 void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system);

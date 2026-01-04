@@ -3,6 +3,7 @@ emulator_src = files(
 	'instruction.c',
 	'emulator/emulator.c',
 	'emulator/emulated.c',
+	'emulator/emulated_state.c',
 	'user_interface/sdl/interface.c',
 	'user_interface/color_lerp.c',
 	'user_interface/instruction_print.c',
