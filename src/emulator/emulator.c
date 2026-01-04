@@ -41,7 +41,8 @@ bool emulator_load_rom(struct Emulator *emulator, const char* rom_name) {
 bool emulator_initialize(struct Emulator *emulator) {
     emulated_system_initialize(&emulator->emulated_system);
 
-    emulator->instructions_per_second = 600;
+    emulator->instructions_per_frame = 10;
+    emulator->frames_per_second = 60;
 
     emulator_user_interface_initialize(&emulator->user_interface, &emulator->emulated_system);
     emulator_user_interface_clear_screen(&emulator->user_interface);
@@ -51,8 +52,8 @@ bool emulator_initialize(struct Emulator *emulator) {
 
 void emulator_update(struct Emulator *emulator) {
     if (emulator->emulated_system.state != PAUSE) {
-        static const float frame_duration = 1000.0f / 60;
-        uint64_t remaining_instructions = emulator->instructions_per_second / 60;
+        const float frame_duration = 1000.0f / emulator->frames_per_second;
+        unsigned int remaining_instructions = emulator->instructions_per_frame;
 
         emulator->user_interface.expected_moment_to_draw = SDL_GetTicks64() + frame_duration;
 
