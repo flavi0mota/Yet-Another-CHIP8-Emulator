@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h> // the program does not compile without this important
 
 // Depends on the 4 higher bits from the 16-bit instruction
 enum DecodedInstructionType {

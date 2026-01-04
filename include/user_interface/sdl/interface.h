@@ -46,3 +46,4 @@ void emulator_user_interface_clear_screen(struct UserInterface *user_interface);
 void emulator_user_interface_audio_callback(void *userdata, uint8_t *stream, int len);
 bool emulator_user_interface_initialize(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system);
 void emulator_user_interface_update(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system);
+bool emulator_user_interface_font_load(struct UserInterface *user_interface, const char* path);

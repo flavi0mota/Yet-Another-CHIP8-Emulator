@@ -47,6 +47,41 @@ void emulator_user_interface_audio_callback(void *userdata, uint8_t *stream, int
     }
 }
 
+//customizable font logic because I got tired of changing the path and recompiling
+bool emulator_user_interface_font_load(struct UserInterface *user_interface, const char* path) {
+    if (user_interface->font) {
+        TTF_CloseFont(user_interface->font);
+    }
+    if (user_interface->pause_menu.message) {
+        SDL_DestroyTexture(user_interface->pause_menu.message);
+    }
+    if (user_interface->pause_menu.message_surface) {
+        SDL_FreeSurface(user_interface->pause_menu.message_surface);
+    }
+
+    user_interface->font = TTF_OpenFont(path, 24);
+    if (!user_interface->font) {
+        printf("Font: (%s)\n error: (%s) \n", path, TTF_GetError());
+        return false;
+    }
+
+    user_interface->pause_menu.message_surface = TTF_RenderText_Blended_Wrapped(
+        user_interface->font,
+        "Game paused\n\nSpace: pause/resume\nF5: save state\nF9: load state\nt: slow/normal",
+        (SDL_Color){255,255,255,255},
+        300
+    );
+
+    if (!user_interface->pause_menu.message_surface) return false;
+
+    user_interface->pause_menu.message = SDL_CreateTextureFromSurface(
+        user_interface->renderer,
+        user_interface->pause_menu.message_surface
+    );
+
+    return (user_interface->pause_menu.message != NULL);
+}
+
 bool emulator_user_interface_initialize(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system) {
     *user_interface = (struct UserInterface){
         .desired_window_width = 64,
@@ -115,27 +150,13 @@ bool emulator_user_interface_initialize(struct UserInterface *user_interface, st
 
     // TTF font
 
-    TTF_Init();
+    if (TTF_Init() == -1) return false;
 
-    user_interface->font = TTF_OpenFont("/usr/share/fonts/Adwaita/AdwaitaSans-Regular.ttf", 24);
-    if (!user_interface->font) {
-        printf("Font error: %s\n", TTF_GetError());
-        return false;
-    }
+    user_interface->font = NULL;
+    user_interface->pause_menu.message = NULL;
+    user_interface->pause_menu.message_surface = NULL;
 
-    user_interface->pause_menu.message_surface = TTF_RenderText_Blended_Wrapped(
-        user_interface->font,
-        "Game paused\n\nSpace: pause/resume\nF5: save state\nF9: load state\nt: slow/normal", 
-        (SDL_Color){255, 255, 255, 255},
-        300
-    );
-
-    user_interface->pause_menu.message = SDL_CreateTextureFromSurface(
-        user_interface->renderer,
-        user_interface->pause_menu.message_surface
-    );
-
-    return true;
+    return emulator_user_interface_font_load(user_interface, "/home/johny-canvas/.local/share/fonts/3270/3270NerdFont-Condensed.ttf");
 }
 
 static void emulated_user_interface_draw(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system) {
