@@ -9,7 +9,7 @@ static inline void disassembling_user_interface_draw(struct UserInterface *user_
         300
     );
 
-    printf("%lu: %04x: ", (long unsigned int)emulated_system->I, emulated_system->encoded_instruction);
+    printf("%lu: %04x: ", (long unsigned int)emulated_system->PC, emulated_system->encoded_instruction);
     instruction_decoded_print(emulated_system->decoded_instruction);
 
     user_interface->disassembling.message = SDL_CreateTextureFromSurface(
