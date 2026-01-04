@@ -9,8 +9,10 @@
 #include "user_interface/sdl/interface.h"
 
 struct Emulator {
-  // how many instructions are executed each second.
-  uint32_t instructions_per_second;
+  unsigned int frames_per_second;
+
+  // how many instructions are executed each frame.
+  unsigned int instructions_per_frame;
 
   // represents the system that will be emulated
   struct EmulatedSystem emulated_system;

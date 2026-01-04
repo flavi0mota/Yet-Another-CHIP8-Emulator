@@ -13,6 +13,9 @@ extern const uint32_t emulated_system_entry_point;
 extern const uint8_t emulated_system_font[16][5];
 
 struct EmulatedSystem {
+  unsigned int frames_per_second;
+  unsigned int instructions_per_frame;
+
   enum {
     QUIT,
     RUNNING,
@@ -51,13 +54,16 @@ struct EmulatedSystem {
   struct DecodedInstruction decoded_instruction;
 };
 
+// emulated.c
+
+void emulated_system_initialize(struct EmulatedSystem *emulated_system);
+bool emulated_system_consume_instruction(struct EmulatedSystem *emulated_system);
+void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated_system);
+
+// state.c
+
 // Writes struct Emulator->EmulatedSystem data to a binary file
-bool emulated_save_state(struct EmulatedSystem *emulated_system, const char *filename);
+bool emulated_state_save(struct EmulatedSystem *emulated_system, const char *filename);
 
 // Loads data from a binary file to Emulator->EmulatedSystem
-bool emulated_load_state(struct EmulatedSystem *emulated_system, const char *filename);
-
-void emulated_system_emulate_instruction(struct EmulatedSystem *emulated_system);
-void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system);
-void emulated_system_emulate_bitwise_arithmetic(struct EmulatedSystem *emulated_system);
-void emulated_system_emulate_misc(struct EmulatedSystem *emulated_system);
+bool emulated_state_load(struct EmulatedSystem *emulated_system, const char *filename);

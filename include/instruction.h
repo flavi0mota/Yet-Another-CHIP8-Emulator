@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string.h>
 
 // Depends on the 4 higher bits from the 16-bit instruction
 enum DecodedInstructionType {
@@ -9,18 +10,25 @@ enum DecodedInstructionType {
   RETURN,
   JUMP,
   SUBROUTINE,
-  IF_EQUAL_TO_VALUE_THEN_SKIP,
-  IF_NOT_EQUAL_TO_VALUE_THEN_SKIP,
-  IF_EQUAL_REGISTERS_THEN_SKIP,
+  IF_EQUAL_THEN_SKIP,
+  IF_NOT_EQUAL_THEN_SKIP,
   VALUE_TO_REGISTER,
   SUM_REGISTER,
-  REGISTER_BITWISE_AND_ARITHMETIC, // TODO: expand this
-  IF_NOT_EQUAL_REGISTERS_THEN_SKIP,
+  REGISTER_TO_REGISTER,
+  OR_REGISTERS,
+  AND_REGISTERS,
+  XOR_REGISTERS,
+  SUM_REGISTERS,
+  SUBTRACT_REGISTERS,
+  SHIFT_RIGHT_REGISTER,
+  INVERT_SUBTRACT_REGISTERS,
+  SHIFT_LEFT_REGISTER,
   ADDRESS_TO_REGISTER_I,
   JUMP_WITH_OFFSET,
   RANDOM_NUMBER_TO_REGISTER,
   DRAW,
-  SKIP_BY_KEY_STATE,
+  IF_PRESSED_THEN_SKIP,
+  IF_NOT_PRESSED_THEN_SKIP,
   MISC, // TODO: expand this
 };
 
@@ -61,6 +69,10 @@ struct DecodedInstruction {
     };
   };
 };
+
+// The string to be parsed into a decoded instructions is consumed until either a newline, a NULL or a EOF after the instruction or the last operand, depending on the instruction type. Thus, it is ok to pass a pointer to a buffer position, given these conditions are met.
+// Example of string: add V0, 4\n
+struct DecodedInstruction decoded_instruction_from_string(const char *string);
 
 struct DecodedInstruction decoded_instruction_from_encoded_instruction(uint16_t encoded_instruction);
 uint16_t encoded_instruction_from_decoded_instruction(struct DecodedInstruction decoded_intruction);

@@ -1,6 +1,17 @@
 #include "user_interface/sdl/interface.h"
 #include "user_interface/color_lerp.h"
 
+// pause_menu.c
+// Draws pause menu
+static void pause_menu_user_interface_draw(struct UserInterface *user_interface);
+
+// disassembling.c
+// Prints instruction decoding info on screen in real time
+static inline void disassembling_user_interface_draw(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system);
+
+#include "pause_menu.c"
+#include "disassembling.c"
+
 void emulator_user_interface_destroy(struct UserInterface *user_interface) {
     SDL_DestroyRenderer(user_interface->renderer);
     SDL_DestroyWindow(user_interface->window);
@@ -102,10 +113,32 @@ bool emulator_user_interface_initialize(struct UserInterface *user_interface, st
         return false;
     }
 
+    // TTF font
+
+    TTF_Init();
+
+    user_interface->font = TTF_OpenFont("/usr/share/fonts/Adwaita/AdwaitaSans-Regular.ttf", 24);
+    if (!user_interface->font) {
+        printf("Font error: %s\n", TTF_GetError());
+        return false;
+    }
+
+    user_interface->pause_menu.message_surface = TTF_RenderText_Blended_Wrapped(
+        user_interface->font,
+        "Game paused\n\nSpace: pause/resume\nF5: save state\nF9: load state\nt: slow/normal", 
+        (SDL_Color){255, 255, 255, 255},
+        300
+    );
+
+    user_interface->pause_menu.message = SDL_CreateTextureFromSurface(
+        user_interface->renderer,
+        user_interface->pause_menu.message_surface
+    );
+
     return true;
 }
 
-void emulator_user_interface_draw(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system) {
+static void emulated_user_interface_draw(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system) {
     uint64_t current_moment = SDL_GetTicks64();
     SDL_Rect rect;
     uint32_t bg_color = user_interface->bg_color;
@@ -164,6 +197,7 @@ void emulator_user_interface_draw(struct UserInterface *user_interface, struct E
             SDL_RenderFillRect(user_interface->renderer, &rect);
         }
     }
+    disassembling_user_interface_draw(user_interface, emulated_system);
     SDL_RenderPresent(user_interface->renderer);
 }
 
@@ -175,7 +209,7 @@ CHIP8 Keypad  QWERTY
 A0BF          zxcv
 */
 
-void emulator_user_interface_handle_keyboard_event_key_down(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system, SDL_Keycode key) {
+static void emulator_user_interface_handle_keyboard_event_key_down(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system, SDL_Keycode key) {
   switch (key) {
       case SDLK_ESCAPE:
           // Escape key; Exit window & End program
@@ -195,6 +229,13 @@ void emulator_user_interface_handle_keyboard_event_key_down(struct UserInterface
       case SDLK_EQUALS:
           // '=': Reset CHIP8 machine for the current ROM
           //init_chip8(chip8, *config, chip8->rom_name);
+          break;
+
+      case SDLK_t:
+          if (emulated_system->frames_per_second == 60)
+              emulated_system->frames_per_second = 4;
+          else
+            emulated_system->frames_per_second = 60;
           break;
 
       case SDLK_j:
@@ -223,7 +264,7 @@ void emulator_user_interface_handle_keyboard_event_key_down(struct UserInterface
 
       // Save state
       case SDLK_F5:
-          if (emulated_save_state(emulated_system, "save_state.bin")) {
+          if (emulated_state_save(emulated_system, "save_state.bin")) {
               puts("State saved successfully.");
           } else {
               puts("Failed to save state.");
@@ -232,7 +273,7 @@ void emulator_user_interface_handle_keyboard_event_key_down(struct UserInterface
 
       // Load state
       case SDLK_F9:
-          if (emulated_load_state(emulated_system, "save_state.bin")) {
+          if (emulated_state_load(emulated_system, "save_state.bin")) {
               puts("State loaded successfully.");
           } else {
               puts("Failed to load state.");
@@ -264,7 +305,7 @@ void emulator_user_interface_handle_keyboard_event_key_down(struct UserInterface
   }
 }
 
-void emulator_user_interface_handle_keyboard_event_key_up(struct EmulatedSystem *emulated_system, SDL_Keycode key) {
+static void emulator_user_interface_handle_keyboard_event_key_up(struct EmulatedSystem *emulated_system, SDL_Keycode key) {
   switch (key) {
       // qwerty to CHIP8 keypad
       case SDLK_1: emulated_system->keypad[0x1] = false; break;
@@ -308,12 +349,18 @@ void emulator_user_interface_update(struct UserInterface *user_interface, struct
           case SDL_KEYUP:
               emulator_user_interface_handle_keyboard_event_key_up(emulated_system, event.key.keysym.sym);
               break;
-
-          default:
-              break;
       }
   }
 
-  emulator_user_interface_draw(user_interface, emulated_system);
-  SDL_PauseAudioDevice(user_interface->dev, !user_interface->should_play_sound); // Maybe pause sound
+  switch (emulated_system->state) {
+    case RUNNING:
+      emulated_user_interface_draw(user_interface, emulated_system);
+      SDL_PauseAudioDevice(user_interface->dev, !user_interface->should_play_sound); // Maybe pause sound
+      break;
+    case PAUSE:
+      pause_menu_user_interface_draw(user_interface);
+      break;
+    case QUIT:
+      break;
+  }
 }

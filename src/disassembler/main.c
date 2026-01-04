@@ -30,13 +30,11 @@ static bool consume_command_line_arguments(struct Disassembler *disassembler, in
 }
 
 int main(int argc, char **argv) {
-    struct Disassembler disassembler;
+    struct Disassembler disassembler = {0};
 
     if (!consume_command_line_arguments(&disassembler, argc, argv)) return EXIT_FAILURE;
 
-    const size_t max_size = 4096;
-    uint8_t instruction_buffer[max_size];
-    memset(instruction_buffer, 0, max_size);
+    uint8_t instruction_buffer[4096] = {0};
 
     FILE *input_file = fopen(disassembler.input_filename, "rb");
     if (!input_file) {
@@ -50,9 +48,9 @@ int main(int argc, char **argv) {
 
     printf("File size: %ld\n", input_file_size);
 
-    if (input_file_size > max_size) {
-        fprintf(stderr, "Rom file %s is too big! Rom size: %llu, Max size allowed: %llu\n", 
-                disassembler.input_filename, (long long unsigned)input_file_size, (long long unsigned)max_size);
+    if (input_file_size > 4096) {
+        fprintf(stderr, "Rom file %s is too big! Rom size: %llu, Max size allowed: %d\n", 
+                disassembler.input_filename, (long long unsigned)input_file_size, 4096);
         fclose(input_file);
         return false;
     }
@@ -65,13 +63,13 @@ int main(int argc, char **argv) {
     }
 
     bool keep_reading = true;
-    uint8_t I = 0;
+    long unsigned int I = 0;
     while (keep_reading) {
-        uint16_t current_instruction = (instruction_buffer[I] << 8) | instruction_buffer[I+1];
+        const uint16_t current_instruction = (instruction_buffer[I] << 8) | instruction_buffer[I+1];
         if (I >= input_file_size) keep_reading = false;
         else {
             I += 2;
-            printf("[%04x] ", (unsigned int)current_instruction);
+            printf("%lu: %04x: ", I, current_instruction);
             struct DecodedInstruction decoded_intruction = decoded_instruction_from_encoded_instruction(current_instruction);
             instruction_decoded_print(decoded_intruction);
         }

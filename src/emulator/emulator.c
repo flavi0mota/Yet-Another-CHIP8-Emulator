@@ -39,15 +39,7 @@ bool emulator_load_rom(struct Emulator *emulator, const char* rom_name) {
 
 // Cleans emulator, loads font, sets default state
 bool emulator_initialize(struct Emulator *emulator) {
-    memset(&emulator->emulated_system, 0, sizeof(struct EmulatedSystem)); // clean start
-    memcpy(&emulator->emulated_system.ram, &emulated_system_font, sizeof(emulated_system_font)); // Load font
-
-    // Set defaults
-    emulator->emulated_system.state = RUNNING;
-    emulator->emulated_system.PC = emulated_system_entry_point;
-    emulator->emulated_system.stack_ptr = &emulator->emulated_system.stack[0];
-    emulator->instructions_per_second = 600;
-    emulator->emulated_system.extension = CHIP8;
+    emulated_system_initialize(&emulator->emulated_system);
 
     emulator_user_interface_initialize(&emulator->user_interface, &emulator->emulated_system);
     emulator_user_interface_clear_screen(&emulator->user_interface);
@@ -56,26 +48,29 @@ bool emulator_initialize(struct Emulator *emulator) {
 }
 
 void emulator_update(struct Emulator *emulator) {
-    static const float frame_duration = 1000.0f / 60;
-    uint64_t remaining_instructions = emulator->instructions_per_second / 60;
+    if (emulator->emulated_system.state != PAUSE) {
+        const float frame_duration = 1000.0f / emulator->emulated_system.frames_per_second;
+        unsigned int remaining_instructions = emulator->emulated_system.instructions_per_frame;
 
-    emulator->user_interface.expected_moment_to_draw = SDL_GetTicks64() + frame_duration;
+        emulator->user_interface.expected_moment_to_draw = SDL_GetTicks64() + frame_duration;
 
-    // Instruction cycle (many of these occur each second)
-    while (remaining_instructions > 0) {
-        remaining_instructions--;
-        emulated_system_emulate_instruction(&emulator->emulated_system);
-    }
+        // Instruction cycle (many of these occur each second)
+        while (remaining_instructions > 0) {
+            remaining_instructions--;
+            emulated_system_consume_instruction(&emulator->emulated_system);
+            emulated_system_emulate_decoded_instruction(&emulator->emulated_system);
+        }
 
-    // Update timers
-    if (emulator->emulated_system.delay_timer > 0) emulator->emulated_system.delay_timer--;
+        // Update timers
+        if (emulator->emulated_system.delay_timer > 0) emulator->emulated_system.delay_timer--;
 
-    if (emulator->emulated_system.sound_timer > 0) {
-        emulator->emulated_system.sound_timer--;
-        emulator->user_interface.should_play_sound = true;
-    }
-    else {
-        emulator->user_interface.should_play_sound = false;
+        if (emulator->emulated_system.sound_timer > 0) {
+            emulator->emulated_system.sound_timer--;
+            emulator->user_interface.should_play_sound = true;
+        }
+        else {
+            emulator->user_interface.should_play_sound = false;
+        }
     }
 
     // Update user interface
