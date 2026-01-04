@@ -10,18 +10,17 @@ const struct InstructionMnemonic instruction_mnemonics[] = {
     {.type = RETURN, .name = "ret"},
     {.type = JUMP, .name = "jp"},
     {.type = SUBROUTINE, .name = "call"},
-    {.type = IF_EQUAL_TO_VALUE_THEN_SKIP, .name = "se"},
-    {.type = IF_NOT_EQUAL_TO_VALUE_THEN_SKIP, .name = "sne"},
-    {.type = IF_EQUAL_REGISTERS_THEN_SKIP, .name = "se"},
+    {.type = IF_EQUAL_THEN_SKIP, .name = "se"},
+    {.type = IF_NOT_EQUAL_THEN_SKIP, .name = "sne"},
     {.type = VALUE_TO_REGISTER, .name = "ld"},
     {.type = SUM_REGISTER, .name = "add"},
     {.type = REGISTER_BITWISE_AND_ARITHMETIC, .name = "bitwise_arithmetic"},
-    {.type = IF_NOT_EQUAL_REGISTERS_THEN_SKIP, .name = "sne"},
     {.type = ADDRESS_TO_REGISTER_I, .name = "ld"},
     {.type = JUMP_WITH_OFFSET, .name = "jp"},
     {.type = RANDOM_NUMBER_TO_REGISTER, .name = "rnd"},
     {.type = DRAW, .name = "drw"},
-    {.type = SKIP_BY_KEY_STATE, .name = "skp"}, // TODO: where is sknp?
+    {.type = IF_PRESSED_THEN_SKIP, .name = "skp"},
+    {.type = IF_NOT_PRESSED_THEN_SKIP, .name = "sknp"},
     {.type = MISC, .name = "misc"},
     {.type = INVALID}, // Must terminate with this
 };
@@ -77,17 +76,17 @@ struct DecodedInstruction decoded_instruction_from_encoded_instruction(uint16_t 
             decoded_instruction.operands_layout = ADDRESS;
             break;
         case 0x3:
-            decoded_instruction.type = IF_EQUAL_TO_VALUE_THEN_SKIP;
+            decoded_instruction.type = IF_EQUAL_THEN_SKIP;
             decoded_instruction.operands_layout = REGISTER_AND_VALUE;
             break;
         case 0x4:
-            decoded_instruction.type = IF_NOT_EQUAL_TO_VALUE_THEN_SKIP;
+            decoded_instruction.type = IF_NOT_EQUAL_THEN_SKIP;
             decoded_instruction.operands_layout = REGISTER_AND_VALUE;
             break;
         case 0x5:
             if ((encoded_instruction & 0x000F) != 0) decoded_instruction.type = INVALID;
             else {
-                decoded_instruction.type = IF_EQUAL_REGISTERS_THEN_SKIP;
+                decoded_instruction.type = IF_EQUAL_THEN_SKIP;
                 decoded_instruction.operands_layout = REGISTERS_AND_HALF_VALUE;
             }
             break;
@@ -104,7 +103,7 @@ struct DecodedInstruction decoded_instruction_from_encoded_instruction(uint16_t 
             decoded_instruction.operands_layout = REGISTERS_AND_HALF_VALUE;
             break;
         case 0x9:
-            decoded_instruction.type = IF_EQUAL_REGISTERS_THEN_SKIP;
+            decoded_instruction.type = IF_EQUAL_THEN_SKIP;
             decoded_instruction.operands_layout = REGISTERS_AND_HALF_VALUE;
             break;
         case 0xA:
@@ -124,7 +123,15 @@ struct DecodedInstruction decoded_instruction_from_encoded_instruction(uint16_t 
             decoded_instruction.operands_layout = REGISTERS_AND_HALF_VALUE;
             break;
         case 0xE:
-            decoded_instruction.type = SKIP_BY_KEY_STATE;
+            switch (encoded_instruction & 0x00FF) {
+                case 0x9E: decoded_instruction.type = IF_PRESSED_THEN_SKIP; break;
+                case 0xA1: decoded_instruction.type = IF_NOT_PRESSED_THEN_SKIP; break;
+                default:
+                    decoded_instruction.type = INVALID;
+                    decoded_instruction.operands_layout = NONE;
+                    return decoded_instruction;
+                    break;
+            }
             decoded_instruction.operands_layout = REGISTER_AND_VALUE;
             break;
         case 0xF:
@@ -201,14 +208,31 @@ uint16_t encoded_instruction_from_decoded_instruction(struct DecodedInstruction 
         case SUBROUTINE:
             encoded_instruction |= 0x2000;
             break;
-        case IF_EQUAL_TO_VALUE_THEN_SKIP:
-            encoded_instruction |= 0x3000;
+        case IF_EQUAL_THEN_SKIP:
+            switch (decoded_instruction.operands_layout) {
+                case REGISTER_AND_VALUE:
+                    encoded_instruction |= 0x3000;
+                    break;
+                case REGISTERS_AND_HALF_VALUE:
+                    encoded_instruction |= 0x5000;
+                    break;
+                default:
+                    return 0x0000;
+                    break;
+            }
             break;
-        case IF_NOT_EQUAL_TO_VALUE_THEN_SKIP:
-            encoded_instruction |= 0x4000;
-            break;
-        case IF_EQUAL_REGISTERS_THEN_SKIP:
-            encoded_instruction |= 0x5000;
+        case IF_NOT_EQUAL_THEN_SKIP:
+            switch (decoded_instruction.operands_layout) {
+                case REGISTER_AND_VALUE:
+                    encoded_instruction |= 0x4000;
+                    break;
+                case REGISTERS_AND_HALF_VALUE:
+                    encoded_instruction |= 0x9000;
+                    break;
+                default:
+                    return 0x0000;
+                    break;
+            }
             break;
         case VALUE_TO_REGISTER:
             encoded_instruction |= 0x6000;
@@ -218,9 +242,6 @@ uint16_t encoded_instruction_from_decoded_instruction(struct DecodedInstruction 
             break;
         case REGISTER_BITWISE_AND_ARITHMETIC:
             encoded_instruction |= 0x8000;
-            break;
-        case IF_NOT_EQUAL_REGISTERS_THEN_SKIP:
-            encoded_instruction |= 0x9000;
             break;
         case ADDRESS_TO_REGISTER_I:
             encoded_instruction |= 0xA000;
@@ -234,7 +255,8 @@ uint16_t encoded_instruction_from_decoded_instruction(struct DecodedInstruction 
         case DRAW:
             encoded_instruction |= 0xD000;
             break;
-        case SKIP_BY_KEY_STATE:
+        case IF_PRESSED_THEN_SKIP:
+        case IF_NOT_PRESSED_THEN_SKIP:
             encoded_instruction |= 0xE000;
             break;
         case MISC:

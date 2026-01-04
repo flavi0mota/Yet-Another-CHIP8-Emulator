@@ -15,9 +15,14 @@ static void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system)
 // misc.c
 static void emulated_system_emulate_misc(struct EmulatedSystem *emulated_system);
 
+// should_skip.c
+static inline bool emulated_system_should_skip_by_key_pressed(struct EmulatedSystem *emulated_system);
+static bool emulated_system_should_skip_by_value(struct EmulatedSystem *emulated_system);
+
 #include "bitwise.c"
 #include "draw.c"
 #include "misc.c"
+#include "should_skip.c"
 
 const uint32_t emulated_system_entry_point = 0x200; // CHIP8 Roms will be loaded to 0x200
 const uint8_t emulated_system_font[16][5] = {
@@ -73,6 +78,7 @@ bool emulated_system_consume_instruction(struct EmulatedSystem *emulated_system)
 
 void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated_system) {
     struct DecodedInstruction *decoded_instruction = &emulated_system->decoded_instruction;
+
     switch (decoded_instruction->type) {
         case CLEAR:
             memset(emulated_system->display, false, sizeof(emulated_system->display));
@@ -87,17 +93,10 @@ void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated
             *emulated_system->stack_ptr++ = emulated_system->PC;  
             emulated_system->PC = decoded_instruction->address;
             break;
-        case IF_EQUAL_TO_VALUE_THEN_SKIP:
-            if (emulated_system->V[decoded_instruction->register_index] == decoded_instruction->value)
-                emulated_system->PC += 2;
+        case IF_EQUAL_THEN_SKIP:
+        case IF_NOT_EQUAL_THEN_SKIP:
+            if (emulated_system_should_skip_by_value(emulated_system)) emulated_system->PC += 2;
             break;
-        case IF_NOT_EQUAL_TO_VALUE_THEN_SKIP:
-            if (emulated_system->V[decoded_instruction->register_index] != decoded_instruction->value)
-                emulated_system->PC += 2;
-            break;
-        case IF_EQUAL_REGISTERS_THEN_SKIP:
-            if (emulated_system->V[decoded_instruction->register_indexes[0]] == emulated_system->V[decoded_instruction->register_indexes[1]])
-                emulated_system->PC += 2;
             break;
         case VALUE_TO_REGISTER:
             emulated_system->V[decoded_instruction->register_index] = decoded_instruction->value;
@@ -107,10 +106,6 @@ void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated
             break;
         case REGISTER_BITWISE_AND_ARITHMETIC:
             emulated_system_emulate_bitwise_arithmetic(emulated_system);
-            break;
-        case IF_NOT_EQUAL_REGISTERS_THEN_SKIP:
-            if (emulated_system->V[decoded_instruction->register_indexes[0]] != emulated_system->V[decoded_instruction->register_indexes[1]])
-                emulated_system->PC += 2;
             break;
         case ADDRESS_TO_REGISTER_I:
             emulated_system->I = decoded_instruction->address;
@@ -125,17 +120,11 @@ void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated
         case DRAW:
             emulated_system_emulate_draw(emulated_system);
             break;
-        case SKIP_BY_KEY_STATE:
-            if (decoded_instruction->value == 0x9E) {
-                // 0xEX9E: Skip next instruction if key in VX is pressed
-                if (emulated_system->keypad[emulated_system->V[decoded_instruction->register_index]])
-                    emulated_system->PC += 2;
-
-            } else if (decoded_instruction->value == 0xA1) {
-                // 0xEX9E: Skip next instruction if key in VX is not pressed
-                if (!emulated_system->keypad[emulated_system->V[decoded_instruction->register_index]])
-                    emulated_system->PC += 2;
-            }
+        case IF_PRESSED_THEN_SKIP:
+            if (emulated_system_should_skip_by_key_pressed(emulated_system)) emulated_system->PC += 2;
+            break;
+        case IF_NOT_PRESSED_THEN_SKIP:
+            if (!emulated_system_should_skip_by_key_pressed(emulated_system)) emulated_system->PC += 2;
             break;
         case MISC:
             emulated_system_emulate_misc(emulated_system);
