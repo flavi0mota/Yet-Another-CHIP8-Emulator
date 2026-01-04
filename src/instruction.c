@@ -14,7 +14,15 @@ const struct InstructionMnemonic instruction_mnemonics[] = {
     {.type = IF_NOT_EQUAL_THEN_SKIP, .name = "sne"},
     {.type = VALUE_TO_REGISTER, .name = "ld"},
     {.type = SUM_REGISTER, .name = "add"},
-    {.type = REGISTER_BITWISE_AND_ARITHMETIC, .name = "bitwise_arithmetic"},
+    {.type = REGISTER_TO_REGISTER, .name = "ld"},
+    {.type = OR_REGISTERS, .name = "or"},
+    {.type = AND_REGISTERS, .name = "and"},
+    {.type = XOR_REGISTERS, .name = "xor"},
+    {.type = SUM_REGISTERS, .name = "sum"},
+    {.type = SUBTRACT_REGISTERS, .name = "sub"},
+    {.type = SHIFT_RIGHT_REGISTER, .name = "shr"},
+    {.type = INVERT_SUBTRACT_REGISTERS, .name = "subn"},
+    {.type = SHIFT_LEFT_REGISTER, .name = "shl"},
     {.type = ADDRESS_TO_REGISTER_I, .name = "ld"},
     {.type = JUMP_WITH_OFFSET, .name = "jp"},
     {.type = RANDOM_NUMBER_TO_REGISTER, .name = "rnd"},
@@ -99,8 +107,40 @@ struct DecodedInstruction decoded_instruction_from_encoded_instruction(uint16_t 
             decoded_instruction.operands_layout = REGISTER_AND_VALUE;
             break;
         case 0x8:
-            decoded_instruction.type = REGISTER_BITWISE_AND_ARITHMETIC;
             decoded_instruction.operands_layout = REGISTERS_AND_HALF_VALUE;
+            switch (encoded_instruction & 0x000F) {
+                case 0:
+                    decoded_instruction.type = REGISTER_TO_REGISTER;
+                    break;
+                case 1:
+                    decoded_instruction.type = OR_REGISTERS;
+                    break;
+                case 2:
+                    decoded_instruction.type = AND_REGISTERS;
+                    break;
+                case 3:
+                    decoded_instruction.type = XOR_REGISTERS;
+                    break;
+                case 4:
+                    decoded_instruction.type = SUM_REGISTERS;
+                    break;
+                case 5:
+                    decoded_instruction.type = SUBTRACT_REGISTERS;
+                    break;
+                case 6:
+                    decoded_instruction.type = SHIFT_RIGHT_REGISTER;
+                    break;
+                case 7:
+                    decoded_instruction.type = INVERT_SUBTRACT_REGISTERS;
+                    break;
+                case 0xE:
+                    decoded_instruction.type = SHIFT_LEFT_REGISTER;
+                    break;
+                default:
+                    decoded_instruction.type = INVALID;
+                    decoded_instruction.operands_layout = NONE;
+                break;
+            }
             break;
         case 0x9:
             decoded_instruction.type = IF_EQUAL_THEN_SKIP;
@@ -240,7 +280,15 @@ uint16_t encoded_instruction_from_decoded_instruction(struct DecodedInstruction 
         case SUM_REGISTER:
             encoded_instruction |= 0x7000;
             break;
-        case REGISTER_BITWISE_AND_ARITHMETIC:
+        case REGISTER_TO_REGISTER:
+        case OR_REGISTERS:
+        case AND_REGISTERS:
+        case XOR_REGISTERS:
+        case SUM_REGISTERS:
+        case SUBTRACT_REGISTERS:
+        case SHIFT_RIGHT_REGISTER:
+        case INVERT_SUBTRACT_REGISTERS:
+        case SHIFT_LEFT_REGISTER:
             encoded_instruction |= 0x8000;
             break;
         case ADDRESS_TO_REGISTER_I:

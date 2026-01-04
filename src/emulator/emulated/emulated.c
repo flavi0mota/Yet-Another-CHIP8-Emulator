@@ -6,9 +6,6 @@
 
 #include "emulated.h"
 
-// bitwise.c
-static void emulated_system_emulate_bitwise_arithmetic(struct EmulatedSystem *emulated_system);
-
 // draw.c
 static void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system);
 
@@ -19,7 +16,6 @@ static void emulated_system_emulate_misc(struct EmulatedSystem *emulated_system)
 static inline bool emulated_system_should_skip_by_key_pressed(struct EmulatedSystem *emulated_system);
 static bool emulated_system_should_skip_by_value(struct EmulatedSystem *emulated_system);
 
-#include "bitwise.c"
 #include "draw.c"
 #include "misc.c"
 #include "should_skip.c"
@@ -79,6 +75,27 @@ bool emulated_system_consume_instruction(struct EmulatedSystem *emulated_system)
 void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated_system) {
     struct DecodedInstruction *decoded_instruction = &emulated_system->decoded_instruction;
 
+
+    // Maybe transform register indexes into pointers to the registers
+    uint8_t *register_pointers[2];
+    uint8_t *register_pointer;
+
+    switch (decoded_instruction->operands_layout) {
+        case REGISTER_AND_VALUE:
+            register_pointer = &emulated_system->V[decoded_instruction->register_index];
+            break;
+        case REGISTERS_AND_HALF_VALUE:
+            register_pointers[0] = &emulated_system->V[decoded_instruction->register_indexes[0]];
+            register_pointers[1] = &emulated_system->V[decoded_instruction->register_indexes[1]];
+            break;
+        default:
+        case ADDRESS:
+        case NONE:
+            break;
+    }
+
+    uint8_t *carry = &emulated_system->V[0xF];
+
     switch (decoded_instruction->type) {
         case CLEAR:
             memset(emulated_system->display, false, sizeof(emulated_system->display));
@@ -97,15 +114,56 @@ void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated
         case IF_NOT_EQUAL_THEN_SKIP:
             if (emulated_system_should_skip_by_value(emulated_system)) emulated_system->PC += 2;
             break;
-            break;
         case VALUE_TO_REGISTER:
-            emulated_system->V[decoded_instruction->register_index] = decoded_instruction->value;
+            *register_pointer = decoded_instruction->value;
             break;
         case SUM_REGISTER:
-            emulated_system->V[decoded_instruction->register_index] += decoded_instruction->value;
+            *register_pointer += decoded_instruction->value;
             break;
-        case REGISTER_BITWISE_AND_ARITHMETIC:
-            emulated_system_emulate_bitwise_arithmetic(emulated_system);
+        case REGISTER_TO_REGISTER:
+            *register_pointers[0] = *register_pointers[1];
+            break;
+        case OR_REGISTERS:
+            *register_pointers[0] |= *register_pointers[1];
+            if (emulated_system->extension == CHIP8) *carry = 0;
+            break;
+        case AND_REGISTERS:
+            *register_pointers[0] &= *register_pointers[1];
+            if (emulated_system->extension == CHIP8) *carry = 0;
+            break;
+        case XOR_REGISTERS:
+            *register_pointers[0] ^= *register_pointers[1];
+            if (emulated_system->extension == CHIP8) *carry = 0;
+            break;
+        case SUM_REGISTERS:
+            *carry = ((uint16_t)(*register_pointers[0] + *register_pointers[0]) > 255);
+            *register_pointers[0] += *register_pointers[1];
+            break;
+        case SUBTRACT_REGISTERS: 
+            *carry = (*register_pointers[1] <= *register_pointers[0]);
+            *register_pointers[0] -= *register_pointers[1];
+            break;
+        case SHIFT_RIGHT_REGISTER:
+            if (emulated_system->extension == CHIP8) {
+                *carry = *register_pointers[1] & 1; // Use VY
+                *register_pointers[0] = *register_pointers[1] >> 1; // Set VX = VY result
+            } else {
+                *carry = *register_pointers[0] & 1;    // Use VX
+                *register_pointers[0] >>= 1;          // Use VX
+            }
+            break;
+        case INVERT_SUBTRACT_REGISTERS:
+            *carry = (*register_pointers[0] <= *register_pointers[1]);
+            *register_pointers[0] = *register_pointers[1] - *register_pointers[0];
+            break;
+        case SHIFT_LEFT_REGISTER:
+            if (emulated_system->extension == CHIP8) { 
+                *carry = (*register_pointers[1] & 0x80) >> 7; // Use VY
+                *register_pointers[0] = *register_pointers[1] << 1; // Set VX = VY result
+            } else {
+                *carry = (*register_pointers[0] & 0x80) >> 7; // VX
+                *register_pointers[0] <<= 1; // Use VX
+            }
             break;
         case ADDRESS_TO_REGISTER_I:
             emulated_system->I = decoded_instruction->address;
