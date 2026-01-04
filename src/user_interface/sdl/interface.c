@@ -125,7 +125,7 @@ bool emulator_user_interface_initialize(struct UserInterface *user_interface, st
 
     user_interface->pause_menu.message_surface = TTF_RenderText_Blended_Wrapped(
         user_interface->font,
-        "Game paused\n\nSpace: pause/resume\nF5: save state\nF9: load state", 
+        "Game paused\n\nSpace: pause/resume\nF5: save state\nF9: load state\nt: slow/normal", 
         (SDL_Color){255, 255, 255, 255},
         300
     );
@@ -229,6 +229,13 @@ static void emulator_user_interface_handle_keyboard_event_key_down(struct UserIn
       case SDLK_EQUALS:
           // '=': Reset CHIP8 machine for the current ROM
           //init_chip8(chip8, *config, chip8->rom_name);
+          break;
+
+      case SDLK_t:
+          if (emulated_system->frames_per_second == 60)
+              emulated_system->frames_per_second = 4;
+          else
+            emulated_system->frames_per_second = 60;
           break;
 
       case SDLK_j:

@@ -48,7 +48,9 @@ void emulated_system_initialize(struct EmulatedSystem *emulated_system) {
         .state = RUNNING,
         .PC = emulated_system_entry_point,
         .stack_ptr = emulated_system->stack,
-        .extension = CHIP8
+        .extension = CHIP8,
+        .instructions_per_frame = 10,
+        .frames_per_second = 60
     };
 }
 

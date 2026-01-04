@@ -13,6 +13,9 @@ extern const uint32_t emulated_system_entry_point;
 extern const uint8_t emulated_system_font[16][5];
 
 struct EmulatedSystem {
+  unsigned int frames_per_second;
+  unsigned int instructions_per_frame;
+
   enum {
     QUIT,
     RUNNING,
