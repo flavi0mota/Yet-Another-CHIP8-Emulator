@@ -143,7 +143,7 @@ struct DecodedInstruction decoded_instruction_from_encoded_instruction(uint16_t 
             }
             break;
         case 0x9:
-            decoded_instruction.type = IF_EQUAL_THEN_SKIP;
+            decoded_instruction.type = IF_NOT_EQUAL_THEN_SKIP;
             decoded_instruction.operands_layout = REGISTERS_AND_HALF_VALUE;
             break;
         case 0xA:
