@@ -47,7 +47,7 @@ void emulator_user_interface_audio_callback(void *userdata, uint8_t *stream, int
     }
 }
 
-bool emulator_user_interface_initialize(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system) {
+bool emulator_user_interface_initialize(struct UserInterface *user_interface) {
     *user_interface = (struct UserInterface){
         .desired_window_width = 64,
         .desired_window_height = 32,
@@ -98,7 +98,7 @@ bool emulator_user_interface_initialize(struct UserInterface *user_interface, st
         .channels = 1,
         .samples = 512,
         .callback = emulator_user_interface_audio_callback,
-        .userdata = emulated_system,
+        .userdata = user_interface, // Changed from emulated_system
     };
 
     user_interface->dev = SDL_OpenAudioDevice(NULL, 0, &user_interface->want, &user_interface->have, 0);
@@ -117,7 +117,8 @@ bool emulator_user_interface_initialize(struct UserInterface *user_interface, st
 
     TTF_Init();
 
-    user_interface->font = TTF_OpenFont("/usr/share/fonts/Adwaita/AdwaitaSans-Regular.ttf", 24);
+    //temporary arrangement, will look for other fonts later
+    user_interface->font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24);
     if (!user_interface->font) {
         printf("Font error: %s\n", TTF_GetError());
         return false;
@@ -219,10 +220,10 @@ static void emulator_user_interface_handle_keyboard_event_key_down(struct UserIn
       case SDLK_SPACE:
           // Space bar
           if (emulated_system->state == RUNNING) {
-              emulated_system->state = PAUSE;  // Pause
+              emulated_system->state = PAUSE;
               puts("==== PAUSED ====");
           } else {
-              emulated_system->state = RUNNING; // Resume
+              emulated_system->state = RUNNING;
           }
           break;
 

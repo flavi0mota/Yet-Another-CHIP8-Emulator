@@ -6,6 +6,8 @@
 
 #include "instruction.h"
 
+#include <stdbool.h>
+
 #define STACK_SIZE 12
 
 // From emulated.c
@@ -29,7 +31,7 @@ struct EmulatedSystem {
   uint8_t ram[4096]; // 4 kilobytes of fully writable RAM
   bool display[64*32]; // 64x32 pixels, each can be on or off (boolean)
   uint16_t stack[STACK_SIZE]; // stores 16-bit adresses, used for function call and return
-  uint16_t *stack_ptr;
+  uint8_t SP;
   uint8_t V[16]; // general-purpose registers
   uint16_t I; // points at some location in memory
   uint16_t PC; // points at the current instruction in memory

@@ -12,13 +12,12 @@ static void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system)
     emulated_system->V[0xF] = 0;  // Initialize carry flag to 0
 
     // Loop over all N rows of the sprite
+    // In emulated_system_emulate_draw()
     for (uint8_t i = 0; i < emulated_system->decoded_instruction.half_value; i++) {
-        // Get next byte/row of sprite data
         const uint8_t sprite_data = emulated_system->ram[emulated_system->I + i];
-        X_coord = orig_X;   // Reset X for next row to draw
+        X_coord = orig_X;   
 
         for (int8_t j = 7; j >= 0; j--) {
-            // set carry flag
             bool *pixel = &emulated_system->display[Y_coord * desired_window_width + X_coord]; 
             const bool sprite_bit = (sprite_data & (1 << j));
 
@@ -26,13 +25,13 @@ static void emulated_system_emulate_draw(struct EmulatedSystem *emulated_system)
                 emulated_system->V[0xF] = 1;  
             }
 
-            // XOR display pixel
             *pixel ^= sprite_bit;
 
-            // Para de desenhar se bater no cantos para esquerda ou direita
-            if (++X_coord >= desired_window_width) break;
+            // Wrap X coordinate instead of breaking
+            X_coord = (X_coord + 1) % desired_window_width;
         }
 
-        if (++Y_coord >= desired_window_height) break;
+        // Wrap Y coordinate instead of breaking
+        Y_coord = (Y_coord + 1) % desired_window_height; 
     }
 }

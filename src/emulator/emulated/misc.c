@@ -1,28 +1,23 @@
 static void emulated_system_emulate_misc(struct EmulatedSystem *emulated_system) {
     switch (emulated_system->decoded_instruction.value) {
         case 0x0A: {
-            // 0xFX0A: VX = get_key(); guarda em VX
-            static bool any_key_pressed = false;
-            static uint8_t key = 0xFF;
-
-            for (uint8_t i = 0; key == 0xFF && i < sizeof emulated_system->keypad; i++) 
+            // 0xFX0A: Wait for a key press, store the value of the key in VX.
+            bool any_key_pressed = false;
+            
+            for (uint8_t i = 0; i < sizeof(emulated_system->keypad); i++) {
                 if (emulated_system->keypad[i]) {
-                    key = i;   
+                    emulated_system->V[emulated_system->decoded_instruction.register_index] = i;
                     any_key_pressed = true;
                     break;
                 }
-
-            if (!any_key_pressed) emulated_system->PC -= 2; 
-            else {
-                // A key has been pressed, also wait until it is released to set the key in VX
-                if (emulated_system->keypad[key])     // "Busy loop" CHIP8 emulation until key is released
-                    emulated_system->PC -= 2;
-                else {
-                    emulated_system->V[emulated_system->decoded_instruction.register_index] = key; // VX = key 
-                    key = 0xFF; // Reset key não encontrada
-                    any_key_pressed = false;
-                }
             }
+
+            // If no key is pressed, decrement PC to repeat the instruction indefinitely
+            if (!any_key_pressed) {
+                emulated_system->PC -= 2; 
+            }
+            // Note: This implements "wait for press". If strict "wait for release" 
+            // is required, a 'waiting_for_key' boolean must be added to EmulatedSystem.
             break;
         }
 

@@ -1,8 +1,9 @@
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "user_interface/instruction_print.h"
 
-// TODO: option to choose between cogwods format and our own format.
+// TODO: option to choose between cowgod's format and our own format.
 void instruction_decoded_print(struct DecodedInstruction decoded_instruction) {
     bool found_mnemonic = false;
     int i = 0;

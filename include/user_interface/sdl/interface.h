@@ -44,5 +44,5 @@ uint32_t user_interface_color_lerp(const uint32_t start_color, const uint32_t en
 void emulator_user_interface_destroy(struct UserInterface *user_interface);
 void emulator_user_interface_clear_screen(struct UserInterface *user_interface);
 void emulator_user_interface_audio_callback(void *userdata, uint8_t *stream, int len);
-bool emulator_user_interface_initialize(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system);
+bool emulator_user_interface_initialize(struct UserInterface *user_interface);
 void emulator_user_interface_update(struct UserInterface *user_interface, struct EmulatedSystem *emulated_system);

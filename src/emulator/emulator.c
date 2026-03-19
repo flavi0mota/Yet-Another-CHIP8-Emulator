@@ -41,7 +41,7 @@ bool emulator_load_rom(struct Emulator *emulator, const char* rom_name) {
 bool emulator_initialize(struct Emulator *emulator) {
     emulated_system_initialize(&emulator->emulated_system);
 
-    emulator_user_interface_initialize(&emulator->user_interface, &emulator->emulated_system);
+    emulator_user_interface_initialize(&emulator->user_interface);
     emulator_user_interface_clear_screen(&emulator->user_interface);
 
     return true;
@@ -57,7 +57,7 @@ void emulator_update(struct Emulator *emulator) {
         // Instruction cycle (many of these occur each second)
         while (remaining_instructions > 0) {
             remaining_instructions--;
-            emulated_system_consume_instruction(&emulator->emulated_system);
+            emulated_system_consume_instruction(&emulator->emulated_system);// Determine type of instruction and layout based on first 4 bits.
             emulated_system_emulate_decoded_instruction(&emulator->emulated_system);
         }
 

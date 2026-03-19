@@ -47,7 +47,7 @@ void emulated_system_initialize(struct EmulatedSystem *emulated_system) {
     *emulated_system = (struct EmulatedSystem){
         .state = RUNNING,
         .PC = emulated_system_entry_point,
-        .stack_ptr = emulated_system->stack,
+        .SP = 0,
         .extension = CHIP8,
         .instructions_per_frame = 10,
         .frames_per_second = 60
@@ -102,14 +102,15 @@ void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated
         case CLEAR:
             memset(emulated_system->display, false, sizeof(emulated_system->display));
             break;
-        case RETURN:
-            emulated_system->PC = *--emulated_system->stack_ptr;
-            break;
         case JUMP:
             emulated_system->PC = decoded_instruction->address;
             break;
+        case RETURN:
+            emulated_system->PC = emulated_system->stack[--emulated_system->SP];
+            break;
+
         case SUBROUTINE:
-            *emulated_system->stack_ptr++ = emulated_system->PC;  
+            emulated_system->stack[emulated_system->SP++] = emulated_system->PC;  
             emulated_system->PC = decoded_instruction->address;
             break;
         case IF_EQUAL_THEN_SKIP:
@@ -137,14 +138,20 @@ void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated
             *register_pointers[0] ^= *register_pointers[1];
             if (emulated_system->extension == CHIP8) *carry = 0;
             break;
-        case SUM_REGISTERS:
-            *carry = ((uint16_t)(*register_pointers[0] + *register_pointers[0]) > 255);
-            *register_pointers[0] += *register_pointers[1];
+        case SUM_REGISTERS: {
+            uint16_t result = *register_pointers[0] + *register_pointers[1]; // Fixed typo
+            uint8_t flag = (result > 255);
+            *register_pointers[0] = result & 0xFF;
+            *carry = flag;
             break;
-        case SUBTRACT_REGISTERS: 
-            *carry = (*register_pointers[1] <= *register_pointers[0]);
-            *register_pointers[0] -= *register_pointers[1];
+        }
+        case SUBTRACT_REGISTERS: {
+            uint8_t flag = (*register_pointers[0] >= *register_pointers[1]);
+            uint8_t result = *register_pointers[0] - *register_pointers[1];
+            *register_pointers[0] = result;
+            *carry = flag; // Set flag after register mutation
             break;
+        }
         case SHIFT_RIGHT_REGISTER:
             if (emulated_system->extension == CHIP8) {
                 *carry = *register_pointers[1] & 1; // Use VY
@@ -154,10 +161,13 @@ void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated
                 *register_pointers[0] >>= 1;          // Use VX
             }
             break;
-        case INVERT_SUBTRACT_REGISTERS:
-            *carry = (*register_pointers[0] <= *register_pointers[1]);
-            *register_pointers[0] = *register_pointers[1] - *register_pointers[0];
+        case INVERT_SUBTRACT_REGISTERS: {
+            uint8_t flag = (*register_pointers[1] >= *register_pointers[0]);
+            uint8_t result = *register_pointers[1] - *register_pointers[0];
+            *register_pointers[0] = result;
+            *carry = flag;
             break;
+        }
         case SHIFT_LEFT_REGISTER:
             if (emulated_system->extension == CHIP8) { 
                 *carry = (*register_pointers[1] & 0x80) >> 7; // Use VY
@@ -174,7 +184,6 @@ void emulated_system_emulate_decoded_instruction(struct EmulatedSystem *emulated
             emulated_system->PC = emulated_system->V[0] + decoded_instruction->address;
             break;
         case RANDOM_NUMBER_TO_REGISTER:
-            // 0xCXNN: VX = rand() % 256 & NN (bitwise AND)
             emulated_system->V[decoded_instruction->register_index] = (rand() % 256) & decoded_instruction->value;
             break;
         case DRAW:
