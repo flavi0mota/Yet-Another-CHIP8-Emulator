@@ -57,12 +57,9 @@ static void emulated_system_emulate_misc(struct EmulatedSystem *emulated_system)
         }
 
         case 0x55:
-            // 0xFX55: Register dump V0-VX inclusive to memory offset from I;
-            for (uint8_t i = 0; i <= emulated_system->decoded_instruction.register_index; i++)  {
-                if (emulated_system->extension == CHIP8)
-                    emulated_system->ram[emulated_system->I++] = emulated_system->V[i]; // Incremento de reg I
-                else
-                    emulated_system->ram[emulated_system->I + i] = emulated_system->V[i]; 
+            for (uint8_t i = 0; i <= emulated_system->decoded_instruction.register_index; i++) {
+                if (emulated_system->I >= sizeof(emulated_system->ram)) break; // Prevent UB
+                emulated_system->ram[emulated_system->I++] = emulated_system->V[i];
             }
             break;
 

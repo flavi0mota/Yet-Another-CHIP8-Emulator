@@ -56,6 +56,12 @@ void emulated_system_initialize(struct EmulatedSystem *emulated_system) {
 
 // Reads and store encoded 16-bit instruction and decodes it
 bool emulated_system_consume_instruction(struct EmulatedSystem *emulated_system) {
+    if (emulated_system->PC >= 4095) {
+        fprintf(stderr, "PC fora do limite: %04X\n", emulated_system->PC);
+        emulated_system->state = QUIT;
+        return false;
+    }
+
     // Get 16-bit instruction from current location PC points to
     emulated_system->encoded_instruction = (
         (emulated_system->ram[emulated_system->PC] << 8) // First byte
@@ -66,11 +72,6 @@ bool emulated_system_consume_instruction(struct EmulatedSystem *emulated_system)
 
     emulated_system->PC += 2; // Point to next instruction
 
-    if (emulated_system->PC >= 4095) {
-        fprintf(stderr, "PC fora do limite: %04X\n", emulated_system->PC);
-        emulated_system->state = QUIT;
-        return false;
-    }
     return true;
 }
 

@@ -1,5 +1,5 @@
 static inline bool emulated_system_should_skip_by_key_pressed(struct EmulatedSystem *emulated_system) {
-    return emulated_system->keypad[emulated_system->V[emulated_system->decoded_instruction.register_index]];
+    return emulated_system->keypad[emulated_system->V[emulated_system->decoded_instruction.register_index] & 0x0F];
 }
 
 static bool emulated_system_should_skip_by_value(struct EmulatedSystem *emulated_system) {
